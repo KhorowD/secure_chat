@@ -8,27 +8,55 @@ from PyQt5 import QtCore, QtGui, QtWidgets, QtNetwork
 
 conn=None
 
+sessions = []
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.closeEvent = self.closeEvent
+        self.server = self.make_server()
 
-    def __del__(self):
-        global conn
-        self.close_conn(conn)
+    
     # тут описываем действия окна сервера
+
+    def btn_init(self):
+        self.ui.btn_clear_log_box.clicked.connect(self.clear_log_box)
+        self.ui.btn_reset_sessions.clicked.connect(self.reset_sessions)
+        self.ui.btn_start_recevieng_msg.connect(self.start_recv)
+        self.ui.btn_stop_recevieng_msg.connect(self.stop_recv)
+
+    def clear_log_box(self):
+        self.ui.log_box.clear()
+
+    def reset_sessions(self):
+        for session in sessions:
+            session.close()
+
+    def start_recv(self):
+        pass
+
+    def stop_recv(self):
+        pass
+    
+    def make_server(self):
+        server = Server(self)
+        return server
 
     def log_event(self, text):
         self.ui.log_box.append(text)
 
-    def send(self):
-        print("+++")
+    # def send(self):
+    #     print("+++")
 
-    def close_conn(self, sockt):
-        sockt.shutdown(socket.SHUT_RDWR)
-        sockt.close()
+class Server(QtNetwork.QTcpServer):
+    def __init__(self, parent=None):
+        QtNetwork.QTcpServer.__init__(self, parent)
+        self.socket = QtNetwork.QTcpSocket(self)
+
+    def incomingConnection(self, socketDescriptor):
+        self.socket.setSocketDescriptor(socketDescriptor)
+        print("socket descriptor set up")
 
 class ServerThread(Thread):
     def __init__(self,window):
