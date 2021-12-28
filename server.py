@@ -1,14 +1,15 @@
-import sys, time
+from concurrent import futures
+
 import server_ui as ui
-import socket
-from threading import Thread
-from socketserver import ThreadingMixIn
 
-from PyQt5 import QtCore, QtGui, QtWidgets, QtNetwork
+import grpc
+import time
 
-conn=None
+import generated.chat_pb2 as chat
+import generated.chat_pb2_grpc as rpc
 
-sessions = []
+
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -30,8 +31,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.log_box.clear()
 
     def reset_sessions(self):
-        for session in sessions:
-            session.close()
+        pass
 
     def start_recv(self):
         pass
@@ -40,97 +40,73 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
     
     def make_server(self):
-        server = Server(self)
-        return server
+        pass
 
     def log_event(self, text):
         self.ui.log_box.append(text)
 
-    # def send(self):
-    #     print("+++")
+class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf rpc file which is generated
 
-class Server(QtNetwork.QTcpServer):
-    def __init__(self, parent=None):
-        QtNetwork.QTcpServer.__init__(self, parent)
-        self.socket = QtNetwork.QTcpSocket(self)
+    def __init__(self):
+        # List with all the chat history
+        self.chats = []
 
-    def incomingConnection(self, socketDescriptor):
-        self.socket.setSocketDescriptor(socketDescriptor)
-        print("socket descriptor set up")
-
-class ServerThread(Thread):
-    def __init__(self,window):
-        Thread.__init__(self)
-        self.window = window
-
-
-    def __del__(self):
-        self.tcpServer.shutdown()
-        self.tcpServer.close()
-        self.close()
-
-    def run(self):
-        TCP_IP = '127.0.0.1'
-        TCP_PORT = 8080
-        BUFFER_SIZE = 20
-        self.tcpServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcpServer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.tcpServer.bind((TCP_IP, TCP_PORT))
-        threads = []
-
-        self.tcpServer.listen(1)
+    # The stream which will be used to send new messages to clients
+    def ChatStream(self, request_iterator, context):
+        """
+        This is a response-stream type call. This means the server can keep sending messages
+        Every client opens this connection and waits for server to send new messages
+        :param request_iterator:
+        :param context:
+        :return:
+        """
+        lastindex = 0
+        # For every client a infinite loop starts (in gRPC's own managed thread)
         while True:
-            # try:
-            print("Multithreaded Python server : Waiting for connections from TCP clients...") 
-            global conn
-            (conn, (ip,port)) = self.tcpServer.accept() 
-            newthread = ClientThread(ip,port,self.window) 
-            newthread.start() 
-            threads.append(newthread)
-        # else:
-        #     self.tcpServer.shutdown(socket.SHUT_RDWR)
-        #     self.tcpServer.close()
-            # except KeyboardInterrupt:
-            #     
-            #     
+            # Check if there are any new messages
+            while len(self.chats) > lastindex:
+                n = self.chats[lastindex]
+                lastindex += 1
+                yield n
 
-            for t in threads:
-                t.join()
+    def SendNote(self, request: chat.Note, context):
+        """
+        This method is called when a clients sends a Note to the server.
+        :param request:
+        :param context:
+        :return:
+        """
+        # this is only for the server console
+        print("[{}] {}".format(request.name, request.message))
+        # Add it to the chat history
+        self.chats.append(request)
+        return chat.Empty()  # something needs to be returned required by protobuf language, we just return empty msg
 
-class ClientThread(Thread):
-
-    def __init__(self,ip,port,window):
-        Thread.__init__(self)
-        self.window = window
-        self.ip = ip
-        self.port = port
-        print("[+] New server socket thread started for " + ip + ":" + str(port))
-        self.window.log_event("[+] New server socket thread started for " + ip + ":" + str(port))
-
-    # def __del__(self):
-
-    #     self.close()
-
-    def run(self):
-        while True:
-            global conn
-            try:
-                data = conn.recv(2048)
-                self.window.log_box.setText("get")
-                print(data)
-            except KeyboardInterrupt:
-                conn.close()
+    def GetCryptoParams(self):
+        """
+        Этот метод вызывается когда, клиент запрашивает параметры для крипто-схемы
+        Отправляются параметры для генерации ключа между абонентом А и Б
+        Отправляется открытый ключ Сервера
+        """
+        # Вырабатываются случайно параметры для пользователей
 
 
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-
-    server_thread = ServerThread(window)
-    server_thread.start()
-    window.show()
-    sys.exit(app.exec_())
-    
 if __name__ == '__main__':
-    main()
-
+    port = 8080  # a random port for the server to run on
+    # the workers is like the amount of threads that can be opened at the same time, when there are 10 clients connected
+    # then no more clients able to connect to the server.
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  # create a gRPC server
+    rpc.add_ChatServerServicer_to_server(ChatServer(), server)  # register the server to gRPC
+    # gRPC basically manages all the threading and server responding logic, which is perfect!
+    print('Starting server. Listening...')
+    server.add_insecure_port('[::]:' + str(port))
+    server.start()
+    # Server starts in background (in another thread) so keep waiting
+    # if we don't wait here the main thread will end, which will end all the child threads, and thus the threads
+    # from the server won't continue to work and stop the server
+    try:
+        while True:
+            time.sleep(64 * 64 * 100)
+    except (KeyboardInterrupt, SystemExit):
+        server.stop()
+        

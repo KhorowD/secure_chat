@@ -91,3 +91,13 @@ class Ui_MainWindow(object):
         self.actionLogin.setText(_translate("MainWindow", "Login"))
         self.actionLogout.setText(_translate("MainWindow", "Logout"))
         self.actionRegister.setText(_translate("MainWindow", "Register"))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
