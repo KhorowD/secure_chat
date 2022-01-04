@@ -10,8 +10,19 @@ message Note {
     string message = 2;
 }
 
+message 
+
 service ChatServer {
     // This bi-directional stream makes it possible to send and receive Notes between 2 persons
     rpc ChatStream (Empty) returns (stream Note);
     rpc SendNote (Note) returns (Empty);
 }
+
+service InitConnection {
+    // Сервер на запрос клиента отправляет информацию по его профилю
+}
+
+service InitSecretChat {
+    // Сервер на запрос клиента устанавливает секретный чат с запрашиваемым клиентом
+}
+
