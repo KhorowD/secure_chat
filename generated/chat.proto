@@ -21,12 +21,27 @@ message res_pq {
     string pub_key_fingerprint = 4;
 }
 
+message req_DH_params {
+    string nonce = 1;
+    string server_nonce = 2;
+    string p = 3;
+    string q = 4;
+    string public_key_fingerprint = 5;
+    string encrypted_data = 6;
+}
+
+message res_DH_params {
+    string nonce = 1;
+    string server_nonce = 2;
+    string encrypted_data = 3;
+}
 
 service ChatServer {
     // This bi-directional stream makes it possible to send and receive Notes between 2 persons
     rpc ChatStream (Empty) returns (stream Note);
     rpc SendNote (Note) returns (Empty);
     rpc RequestPQ (req_pq) returns (res_pq); //Возвращает аутентификационную информацию со стороны сервера
+    rpc RequestDH (req_DH_params) returns (res_DH_params); // Возвращаем ответ на запрос параметров DH
 }
 
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>903</width>
-    <height>955</height>
+    <width>899</width>
+    <height>946</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -40,7 +40,7 @@
        <widget class="QPushButton" name="btn_send_msg">
         <property name="geometry">
          <rect>
-          <x>650</x>
+          <x>670</x>
           <y>390</y>
           <width>91</width>
           <height>31</height>
@@ -50,28 +50,12 @@
          <string>send</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="btn_send_file">
-        <property name="geometry">
-         <rect>
-          <x>530</x>
-          <y>390</y>
-          <width>93</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>send file</string>
-        </property>
-        <property name="flat">
-         <bool>false</bool>
-        </property>
-       </widget>
        <widget class="QTextEdit" name="text_input_msg">
         <property name="geometry">
          <rect>
           <x>90</x>
           <y>320</y>
-          <width>661</width>
+          <width>671</width>
           <height>41</height>
          </rect>
         </property>
@@ -80,9 +64,9 @@
         <property name="geometry">
          <rect>
           <x>40</x>
-          <y>520</y>
+          <y>470</y>
           <width>751</width>
-          <height>311</height>
+          <height>361</height>
          </rect>
         </property>
         <property name="title">
@@ -100,10 +84,10 @@
         <widget class="QLabel" name="label">
          <property name="geometry">
           <rect>
-           <x>40</x>
+           <x>20</x>
            <y>30</y>
-           <width>141</width>
-           <height>16</height>
+           <width>181</width>
+           <height>20</height>
           </rect>
          </property>
          <property name="text">
@@ -113,7 +97,7 @@
         <widget class="QLineEdit" name="line_edit_128bits">
          <property name="geometry">
           <rect>
-           <x>200</x>
+           <x>240</x>
            <y>30</y>
            <width>113</width>
            <height>22</height>
@@ -123,7 +107,7 @@
         <widget class="QPushButton" name="btn_gen_128_bits">
          <property name="geometry">
           <rect>
-           <x>330</x>
+           <x>370</x>
            <y>30</y>
            <width>93</width>
            <height>21</height>
@@ -164,8 +148,8 @@
           <rect>
            <x>100</x>
            <y>260</y>
-           <width>542</width>
-           <height>25</height>
+           <width>581</width>
+           <height>26</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -189,7 +173,7 @@
           <item>
            <widget class="QLabel" name="label_10">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;open_key&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;pub_key&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -208,10 +192,10 @@
         <widget class="QLabel" name="label_11">
          <property name="geometry">
           <rect>
-           <x>40</x>
+           <x>20</x>
            <y>70</y>
-           <width>151</width>
-           <height>16</height>
+           <width>201</width>
+           <height>20</height>
           </rect>
          </property>
          <property name="text">
@@ -221,7 +205,7 @@
         <widget class="QLineEdit" name="line_edit_256bits">
          <property name="geometry">
           <rect>
-           <x>200</x>
+           <x>240</x>
            <y>70</y>
            <width>113</width>
            <height>22</height>
@@ -231,7 +215,7 @@
         <widget class="QPushButton" name="btn_gen_256_bits">
          <property name="geometry">
           <rect>
-           <x>330</x>
+           <x>370</x>
            <y>70</y>
            <width>93</width>
            <height>21</height>
@@ -241,13 +225,26 @@
           <string>gen 256 bit</string>
          </property>
         </widget>
+        <widget class="QPushButton" name="btn_accept_params">
+         <property name="geometry">
+          <rect>
+           <x>630</x>
+           <y>310</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Accept!</string>
+         </property>
+        </widget>
         <widget class="QWidget" name="">
          <property name="geometry">
           <rect>
            <x>40</x>
            <y>160</y>
            <width>651</width>
-           <height>25</height>
+           <height>26</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout">
@@ -259,27 +256,27 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_2"/>
+           <widget class="QLineEdit" name="line_edit_rsa_n"/>
           </item>
           <item>
            <widget class="QLabel" name="label_4">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;e&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;pub_key&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_3"/>
+           <widget class="QLineEdit" name="line_edit_pub_key"/>
           </item>
           <item>
            <widget class="QLabel" name="label_5">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;d&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;priv_key&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_4"/>
+           <widget class="QLineEdit" name="line_edit_priv_key"/>
           </item>
          </layout>
         </widget>
@@ -289,7 +286,7 @@
            <x>150</x>
            <y>220</y>
            <width>394</width>
-           <height>25</height>
+           <height>26</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -322,6 +319,63 @@
           </item>
          </layout>
         </widget>
+       </widget>
+       <widget class="QPushButton" name="btn_open_file">
+        <property name="geometry">
+         <rect>
+          <x>90</x>
+          <y>390</y>
+          <width>93</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>open file</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="LogTab">
+       <attribute name="title">
+        <string>LogTab</string>
+       </attribute>
+       <widget class="QTextEdit" name="log_box">
+        <property name="geometry">
+         <rect>
+          <x>90</x>
+          <y>100</y>
+          <width>701</width>
+          <height>431</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_logging">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>30</y>
+          <width>571</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Logging Information&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+       <widget class="QGroupBox" name="params_server">
+        <property name="geometry">
+         <rect>
+          <x>90</x>
+          <y>570</y>
+          <width>701</width>
+          <height>271</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string>Server Info</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
        </widget>
       </widget>
       <widget class="QWidget" name="CollisionMode">
@@ -384,8 +438,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>903</width>
-     <height>21</height>
+     <width>899</width>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSet_User">

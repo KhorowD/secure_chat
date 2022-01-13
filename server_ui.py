@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(843, 788)
+        MainWindow.resize(839, 779)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -29,6 +29,7 @@ class Ui_MainWindow(object):
         self.label_admin_panel.setObjectName("label_admin_panel")
         self.gridLayout.addWidget(self.label_admin_panel, 0, 0, 1, 1)
         self.log_box = QtWidgets.QTextEdit(self.centralwidget)
+        self.log_box.setReadOnly(True)
         self.log_box.setObjectName("log_box")
         self.gridLayout.addWidget(self.log_box, 1, 0, 1, 1)
         self.btn_start_recevieng_msg = QtWidgets.QPushButton(self.centralwidget)
@@ -42,7 +43,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.btn_stop_recevieng_msg, 6, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 843, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 839, 26))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)

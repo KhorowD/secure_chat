@@ -1,6 +1,7 @@
 # from tkinter.constants import X
 # import gmpy2
 from bitarray import util, bitarray
+from google.protobuf import message
 
 
 A = 0x67452301
@@ -46,24 +47,34 @@ def bin_and(a, b, word_lenght=32):
     # print(len(b))
     if len(a) < word_lenght:
         a = insert_null(word_lenght - len(a), a)
+    elif len(a) > word_lenght:
+        a = a[len(a)-32:]
     if len(b) < word_lenght:
         b = insert_null(word_lenght - len(b), b)
-
+    elif len(b) > word_lenght:
+        b = b[len(b)-32:]
     # print(f"len(a) = {len(a)}")
     # print(f"a = {a}")
     # print(f"len(b) = {len(b)}")
     # print(f"b = {b}")
-    return a & b
+    try:
+        result = a & b
+    except Exception:
+        print(a)
+        print(b)
+        return None
+
+    return result
 
 def bin_or(a, b, word_lenght=32):
     """
     Возвращает or двух бинарных строк
     """
     # return bin(int(a,2)|int(b,2))[2:].zfill(word_lenght)
-    # if len(a) != word_lenght:
-    #     a = insert_null(word_lenght - len(a), a)
-    # if len(b) != word_lenght:
-    #     b = insert_null(word_lenght - len(b), b)
+    if len(a) != word_lenght:
+        a = insert_null(word_lenght - len(a), a)
+    if len(b) != word_lenght:
+        b = insert_null(word_lenght - len(b), b)
     return a | b
 
 def bin_not(a, word_lenght=32):
@@ -71,8 +82,8 @@ def bin_not(a, word_lenght=32):
     Возвращает or двух бинарных строк
     """
     # return bin(~int(a,2))[2:].zfill(word_lenght)
-    # if len(a) != word_lenght:
-    #     a = insert_null(word_lenght - len(a), a)
+    if len(a) != word_lenght:
+        a = insert_null(word_lenght - len(a), a)
     return ~a
 
 def func_1(b, c, d):
@@ -113,13 +124,20 @@ def ROL(word, pos):
     Принимает массив битов и позицию смещения
     """
 
-    if isinstance(word, bitarray) or isinstance(word, str):
+    if isinstance(word, bitarray):
 
         if len(word) < 32:
             word = insert_null(32-len(word), word)
 
         shifted = word[pos:] + word[:pos]
 
+    elif isinstance(word, str):
+
+        if len(word) < 32:
+            for i in range(0, 32-len(word)):
+                word = "0" + word
+        shifted = word[pos:] + word[:pos]
+        
     elif isinstance(word, int):
         shifted = ((word << pos) | (word >> (32 - pos)))
     else:
@@ -198,21 +216,21 @@ def sha_one_process(message: str):
 
     chunks = [binary_data[x:x+512] for x in range(0, len(binary_data), 512)]
 
-    print(f"Chunks before adding padding:\n{chunks}")
+    # print(f"Chunks before adding padding:\n{chunks}")
 
     chunks = add_padding(chunks, len(binary_data))
 
-    print(f"Chunks after adding padding:\n{chunks}")
+    # print(f"Chunks after adding padding:\n{chunks}")
     
     for chunk in chunks:
-        print(f"chunk lengh = {len(chunk)}")
+        # print(f"chunk lengh = {len(chunk)}")
         words = [chunk[x:x+32] for x in range(0, len(chunk), 32)]
 
-        print(f"words is \n {words}")
+        # print(f"words is \n {words}")
 
         converted_words = convert_ba_2_int_array(words)
 
-        print(f"converted words = {converted_words}")
+        # print(f"converted words = {converted_words}")
 
         for i in range(16, 80):
             new_word = converted_words[i-3] ^  converted_words[i-8] ^ converted_words[i-14] ^ converted_words[i-16]
@@ -220,11 +238,11 @@ def sha_one_process(message: str):
             new_word = ROL(new_word, 1)
             words.append(bitarray(bin(new_word)[2:]))
             converted_words.append(new_word)
-            print(f"{i+1} word = {new_word} ")
+            # print(f"{i+1} word = {new_word} ")
             
-        print(f"extended converted words = \n {converted_words}")
+        # print(f"extended converted words = \n {converted_words}")
 
-        print(f"extended words = {words}")
+        # print(f"extended words = {words}")
 
         # Инициация вектора
         a = bitarray(bin(h0)[2:])
@@ -250,19 +268,19 @@ def sha_one_process(message: str):
                 f = func_4(b, c, d)
                 k = K[4]
 
-            print(f"func result = {int(f.to01(), 2)}")
-            print(f"A shift 5 = {util.ba2int(ROL(a, 5))}")
+            # print(f"func result = {int(f.to01(), 2)}")
+            # print(f"A shift 5 = {util.ba2int(ROL(a, 5))}")
             temp_int = ( int(ROL(a.to01(), 5), 2) + int(f.to01(), 2) ) % pow(2, 32)
-            print(f"temp_int = {temp_int}")
+            # print(f"temp_int = {temp_int}")
             temp_int = (temp_int + int(e.to01(), 2)) % pow(2, 32)
-            print(f"temp_int = {temp_int}")
+            # print(f"temp_int = {temp_int}")
             temp_int = (temp_int + k) % pow(2, 32)
-            print(f"temp_int = {temp_int}")
+            # print(f"temp_int = {temp_int}")
             temp_int = (temp_int + int(words[i].to01(), 2)) % pow(2, 32)
-            print(f"temp_int = {temp_int}")
+            # print(f"temp_int = {temp_int}")
             temp = bitarray(bin(temp_int)[2:])
-            print("before")
-            print(util.ba2int(e), util.ba2int(d), util.ba2int(c), util.ba2int(b), util.ba2int(a))
+            # print("before")
+            # print(util.ba2int(e), util.ba2int(d), util.ba2int(c), util.ba2int(b), util.ba2int(a))
 
             e = d
             d = c
@@ -270,8 +288,8 @@ def sha_one_process(message: str):
             b = a 
             a = temp 
 
-            print("after")
-            print(util.ba2int(e), util.ba2int(d), util.ba2int(c), util.ba2int(b), util.ba2int(a))
+            # print("after")
+            # print(util.ba2int(e), util.ba2int(d), util.ba2int(c), util.ba2int(b), util.ba2int(a))
 
         h0 = (h0 + util.ba2int(a)) % pow(2,32)  
         h1 = (h1 + util.ba2int(b)) % pow(2,32)
@@ -308,7 +326,8 @@ def sha_one_process(message: str):
 
 def main():
 
-    message = input("enter some string\n")
+    # message = input("enter some string\n")
+    message = "ace38965a864c99a9b3905c4ba03c3a11a00c2bd49b998d9d218ad60a5940efaf0205803551f77b52faeadb5190a4e6440764907600c7bc74afb1ef10b9fc5b252832961faa19d3f589b698ac43f3290a305b7ccbc5faae96ce7f6521fdc794e371a78a200f484e44a83191033e6c5f05970fc5b4040a5dc37a792402efebf037919eaae6490c44283398e7e556f625c150605149869"
     print(f"hash value = {sha_one_process(message)}")
 
 if __name__ == "__main__":

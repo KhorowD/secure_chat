@@ -29,6 +29,11 @@ class ChatServerStub(object):
                 request_serializer=generated_dot_chat__pb2.req_pq.SerializeToString,
                 response_deserializer=generated_dot_chat__pb2.res_pq.FromString,
                 )
+        self.RequestDH = channel.unary_unary(
+                '/grpc.ChatServer/RequestDH',
+                request_serializer=generated_dot_chat__pb2.req_DH_params.SerializeToString,
+                response_deserializer=generated_dot_chat__pb2.res_DH_params.FromString,
+                )
 
 
 class ChatServerServicer(object):
@@ -54,6 +59,13 @@ class ChatServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RequestDH(self, request, context):
+        """Возвращаем ответ на запрос параметров DH
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChatServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -71,6 +83,11 @@ def add_ChatServerServicer_to_server(servicer, server):
                     servicer.RequestPQ,
                     request_deserializer=generated_dot_chat__pb2.req_pq.FromString,
                     response_serializer=generated_dot_chat__pb2.res_pq.SerializeToString,
+            ),
+            'RequestDH': grpc.unary_unary_rpc_method_handler(
+                    servicer.RequestDH,
+                    request_deserializer=generated_dot_chat__pb2.req_DH_params.FromString,
+                    response_serializer=generated_dot_chat__pb2.res_DH_params.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -130,5 +147,22 @@ class ChatServer(object):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatServer/RequestPQ',
             generated_dot_chat__pb2.req_pq.SerializeToString,
             generated_dot_chat__pb2.res_pq.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def RequestDH(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatServer/RequestDH',
+            generated_dot_chat__pb2.req_DH_params.SerializeToString,
+            generated_dot_chat__pb2.res_DH_params.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>843</width>
-    <height>788</height>
+    <width>839</width>
+    <height>779</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,7 +37,11 @@
      </widget>
     </item>
     <item row="1" column="0">
-     <widget class="QTextEdit" name="log_box"/>
+     <widget class="QTextEdit" name="log_box">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
     </item>
     <item row="5" column="0">
      <widget class="QPushButton" name="btn_start_recevieng_msg">
@@ -67,8 +71,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>843</width>
-     <height>21</height>
+     <width>839</width>
+     <height>26</height>
     </rect>
    </property>
   </widget>
