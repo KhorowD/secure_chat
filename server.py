@@ -4,19 +4,33 @@ import server_ui as ui
 
 import grpc
 import time
+import sys
+import threading
 
 import generated.chat_pb2 as chat
 import generated.chat_pb2_grpc as rpc
 
+from gamma import gen_key as gen_IV
+
+from base_func import prime_gen_rm
+
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+
+class ClientContext():
+    def __init__(self) -> None:
+        self.name = ""
+        self.IV_128 = 0
+        self.IV_256 = 0
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
-        self.server = self.make_server()
+        # self.server = self.make_server()
+        threading.Thread(target=self.make_server, daemon=True).start()
 
     
     # тут описываем действия окна сервера
@@ -40,7 +54,23 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
     
     def make_server(self):
-        pass
+        port = 8080  # a random port for the server to run on
+        # the workers is like the amount of threads that can be opened at the same time, when there are 10 clients connected
+        # then no more clients able to connect to the server.
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  # create a gRPC server
+        rpc.add_ChatServerServicer_to_server(ChatServer(), server)  # register the server to gRPC
+        # gRPC basically manages all the threading and server responding logic, which is perfect!
+        print('Starting server. Listening...')
+        server.add_insecure_port('[::]:' + str(port))
+        server.start()
+        # Server starts in background (in another thread) so keep waiting
+        # if we don't wait here the main thread will end, which will end all the child threads, and thus the threads
+        # from the server won't continue to work and stop the server
+        try:
+            while True:
+                time.sleep(64 * 64 * 100)
+        except (KeyboardInterrupt, SystemExit):
+            server.stop()
 
     def log_event(self, text):
         self.ui.log_box.append(text)
@@ -82,32 +112,72 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         self.chats.append(request)
         return chat.Empty()  # something needs to be returned required by protobuf language, we just return empty msg
 
-    def GetCryptoParams(self):
+    def RequestPQ(self, request: chat.req_pq, context):
         """
-        Этот метод вызывается когда, клиент запрашивает параметры для крипто-схемы
-        Отправляются параметры для генерации ключа между абонентом А и Б
-        Отправляется открытый ключ Сервера
+        Вызовываемый клиентом метод, для прохождения pq авторизации
         """
-        
+        new_client = ClientContext()
+
+        new_client.IV_128 = request.nonce
+
+        print(new_client.IV_128)
+        print(type(new_client.IV_128))
+
+        # Формируем ответ сервера
+        server_response = chat.res_pq()
+
+        # Устанавливаем nonce клиента
+        server_response.nonce = request.nonce
+
+        # Генерируем nonce сервера
+        server_response.server_nonce = gen_IV(128)
+
+        n = None
+
+        while n == None:
+
+            # Формируем параметры RSA -> p и q
+            server_p = int(prime_gen_rm(32), 2)
+            server_q = int(prime_gen_rm(32), 2)
+
+            # Вычисляем N
+            n =  server_p * server_q
+
+            if n < 
+
+        server_response.pq = str(n)
+
+        server_response.pub_key_fingerprint = ""
+
+        return server_response
+
+
         # Вырабатываются случайно параметры для пользователей
 
+    # def Req_PQ(self, )
 
 if __name__ == '__main__':
-    port = 8080  # a random port for the server to run on
-    # the workers is like the amount of threads that can be opened at the same time, when there are 10 clients connected
-    # then no more clients able to connect to the server.
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  # create a gRPC server
-    rpc.add_ChatServerServicer_to_server(ChatServer(), server)  # register the server to gRPC
-    # gRPC basically manages all the threading and server responding logic, which is perfect!
-    print('Starting server. Listening...')
-    server.add_insecure_port('[::]:' + str(port))
-    server.start()
-    # Server starts in background (in another thread) so keep waiting
-    # if we don't wait here the main thread will end, which will end all the child threads, and thus the threads
-    # from the server won't continue to work and stop the server
-    try:
-        while True:
-            time.sleep(64 * 64 * 100)
-    except (KeyboardInterrupt, SystemExit):
-        server.stop()
+    
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
+    
+    # port = 8080  # a random port for the server to run on
+    # # the workers is like the amount of threads that can be opened at the same time, when there are 10 clients connected
+    # # then no more clients able to connect to the server.
+    # server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  # create a gRPC server
+    # rpc.add_ChatServerServicer_to_server(ChatServer(), server)  # register the server to gRPC
+    # # gRPC basically manages all the threading and server responding logic, which is perfect!
+    # print('Starting server. Listening...')
+    # server.add_insecure_port('[::]:' + str(port))
+    # server.start()
+    # # Server starts in background (in another thread) so keep waiting
+    # # if we don't wait here the main thread will end, which will end all the child threads, and thus the threads
+    # # from the server won't continue to work and stop the server
+    # try:
+    #     while True:
+    #         time.sleep(64 * 64 * 100)
+    # except (KeyboardInterrupt, SystemExit):
+    #     server.stop()
         

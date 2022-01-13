@@ -12,7 +12,7 @@ E = 0xC3D2E1F0
 K = {1: 0x5A827999, 2: 0x6ED9EBA1, 3: 0x8F1BBCDC, 4: 0xCA62C1D6}
 
 def to_binary(string: str):
-    bin_array = bitarray()
+    bin_array = bitarray(endian='big')
 
     bin_array.frombytes(string.encode())
 
@@ -24,6 +24,7 @@ def insert_null(repeats, array):
         array.insert(0, False)
 
     return array
+
 
 def bin_xor(a, b, word_lenght=32):
     """
@@ -59,10 +60,10 @@ def bin_or(a, b, word_lenght=32):
     Возвращает or двух бинарных строк
     """
     # return bin(int(a,2)|int(b,2))[2:].zfill(word_lenght)
-    if len(a) != word_lenght:
-        a = insert_null(word_lenght - len(a), a)
-    if len(b) != word_lenght:
-        b = insert_null(word_lenght - len(b), b)
+    # if len(a) != word_lenght:
+    #     a = insert_null(word_lenght - len(a), a)
+    # if len(b) != word_lenght:
+    #     b = insert_null(word_lenght - len(b), b)
     return a | b
 
 def bin_not(a, word_lenght=32):
@@ -70,8 +71,8 @@ def bin_not(a, word_lenght=32):
     Возвращает or двух бинарных строк
     """
     # return bin(~int(a,2))[2:].zfill(word_lenght)
-    if len(a) != word_lenght:
-        a = insert_null(word_lenght - len(a), a)
+    # if len(a) != word_lenght:
+    #     a = insert_null(word_lenght - len(a), a)
     return ~a
 
 def func_1(b, c, d):
@@ -90,13 +91,41 @@ def func_3(b, c, d):
     """
     Функция для иттераций (40, 59)
     """
-    return bin_or(bin_or(bin_and(b,c), bin_and(b,d)),bin_and(c, d))
+    temp_1 = bin_and(b,c)
+    temp_2 = bin_and(b,d)
+    temp_3 = bin_and(c, d)
+
+    result = bin_or(temp_1, temp_2)
+
+    result = bin_or(result, temp_3)
+    
+    return result
 
 def func_4(b, c, d):
     """
     Функция для иттераций (60, 79)
     """
     return bin_xor(bin_xor(b,c),d)
+
+def ROL(word, pos):
+    """
+    Функция левого смещения
+    Принимает массив битов и позицию смещения
+    """
+
+    if isinstance(word, bitarray) or isinstance(word, str):
+
+        if len(word) < 32:
+            word = insert_null(32-len(word), word)
+
+        shifted = word[pos:] + word[:pos]
+
+    elif isinstance(word, int):
+        shifted = ((word << pos) | (word >> (32 - pos)))
+    else:
+        return None
+
+    return shifted
 
 def add_padding(chunks: list, msg_lenght: int):
     """
@@ -150,6 +179,12 @@ def add_padding(chunks: list, msg_lenght: int):
 
     return chunks
 
+def convert_ba2int_array_test(array):
+    integer_array = [util.ba2int(x) % pow(2, 32) for x in array]
+    print(integer_array)
+
+def convert_ba_2_int_array(array):
+    return [util.ba2int(x) % pow(2, 32) for x in array]
 
 def sha_one_process(message: str):
 
@@ -175,14 +210,21 @@ def sha_one_process(message: str):
 
         print(f"words is \n {words}")
 
-        # for word in words:
-        #     print(len(word))
+        converted_words = convert_ba_2_int_array(words)
+
+        print(f"converted words = {converted_words}")
 
         for i in range(16, 80):
-            # new_word = words[i-3] ^ words[i-8] ^ words[i-14] ^ words[i-16]
-            new_word = bin_xor(bin_xor(bin_xor(words[i-3], words[i-8]), words[i-14]), words[i-16])
-            words.append(new_word[:1] + new_word[1:]) # ROL
+            new_word = converted_words[i-3] ^  converted_words[i-8] ^ converted_words[i-14] ^ converted_words[i-16]
+            new_word = new_word % pow(2, 32)
+            new_word = ROL(new_word, 1)
+            words.append(bitarray(bin(new_word)[2:]))
+            converted_words.append(new_word)
+            print(f"{i+1} word = {new_word} ")
+            
+        print(f"extended converted words = \n {converted_words}")
 
+        print(f"extended words = {words}")
 
         # Инициация вектора
         a = bitarray(bin(h0)[2:])
@@ -193,9 +235,6 @@ def sha_one_process(message: str):
         d.insert(0, False)
         d.insert(0, False)
         e = bitarray(bin(h4)[2:])
-
-        # print(a,b,c,d,e)
-        # print(len(a),len(b),len(c),len(d),len(e))
 
         for i in range(0, 80):
             if i <= 19:
@@ -211,82 +250,65 @@ def sha_one_process(message: str):
                 f = func_4(b, c, d)
                 k = K[4]
 
-            
-            # temp_a = int(a.to01()[:5] + a.to01()[5:], 2)
-            # print(f"temp_a = {temp_a}")
-            # temp_f = int(f.to01(), 2)
-            # print(f"temp_f = {temp_f}")
-            # temp_e = int(e.to01(), 2)
-            # print(f"temp_e = {temp_e}")
-            # print(type(k))
-            # print(k)
-            # temp_k = k
-            # print(f"temp_k = {temp_k}")
-            # temp_W = int(words[i].to01(), 2)
-            # print(f"temp_W = {temp_W}")
+            print(f"func result = {int(f.to01(), 2)}")
+            print(f"A shift 5 = {util.ba2int(ROL(a, 5))}")
+            temp_int = ( int(ROL(a.to01(), 5), 2) + int(f.to01(), 2) ) % pow(2, 32)
+            print(f"temp_int = {temp_int}")
+            temp_int = (temp_int + int(e.to01(), 2)) % pow(2, 32)
+            print(f"temp_int = {temp_int}")
+            temp_int = (temp_int + k) % pow(2, 32)
+            print(f"temp_int = {temp_int}")
+            temp_int = (temp_int + int(words[i].to01(), 2)) % pow(2, 32)
+            print(f"temp_int = {temp_int}")
+            temp = bitarray(bin(temp_int)[2:])
+            print("before")
+            print(util.ba2int(e), util.ba2int(d), util.ba2int(c), util.ba2int(b), util.ba2int(a))
 
-            temp_int  = (int(a.to01()[:5] + a.to01()[5:], 2) + int(f.to01(), 2) + int(e.to01(), 2) + k + int(words[i].to01(), 2)) %pow(2,32)
-            temp = util.int2ba(temp_int)
-            # if temp_int >= 4294967296 and len(temp) > 32:
-            #     for i in range(0, len(temp)-32):
-            #         temp.pop(0)
-
-
-
-
-            # e = hex(int(d,2))
-            # e = util.ba2hex(d)
-            # print(f"e test = {e}")
-            # d = util.ba2hex(c)
-            # c = util.ba2hex(b[:30] + b[30:])
-            # b = hex(int(a.to01(),2))#util.ba2hex(a)
-            # a = temp 
             e = d
             d = c
-            c = b[:30] + b[30:]
-            b = a #util.ba2hex(a)
+            c = bitarray(ROL(b, 30))
+            b = a 
             a = temp 
 
-        h0 = (h0 + util.ba2int(a))%pow(2,32)   #hex(int(a, 2))
-        h1 = (h1 + util.ba2int(b))%pow(2,32)
-        h2 = (h2 + util.ba2int(c))%pow(2,32)
-        h3 = (h3 + util.ba2int(d))%pow(2,32)
-        h4 = (h4 + util.ba2int(e))%pow(2,32)
+            print("after")
+            print(util.ba2int(e), util.ba2int(d), util.ba2int(c), util.ba2int(b), util.ba2int(a))
+
+        h0 = (h0 + util.ba2int(a)) % pow(2,32)  
+        h1 = (h1 + util.ba2int(b)) % pow(2,32)
+        h2 = (h2 + util.ba2int(c)) % pow(2,32)
+        h3 = (h3 + util.ba2int(d)) % pow(2,32)
+        h4 = (h4 + util.ba2int(e)) % pow(2,32)
         
 
     hash_parts = [h0, h1, h2, h3, h4]
 
-    result = ""
-    for part in hash_parts:
-        part_ba = util.int2ba(part)
-        if part >= 4294967296 and len(part_ba) > 32:
-            for i in range(0, len(part_ba)-32):
-                part_ba.pop(0)
-        elif len(part_ba) < 32:
-            for i in range(0, len(part_ba) - 32):
-                part_ba.insert(0, False)
-        print(f"part_ba len = {len(part_ba)}")
-        result += hex(util.ba2int(part_ba))[2:]
+    print(f"hash_parts = {hash_parts}")
 
-    # result = str(hex(h0)[2:]) + str(hex(h1)[2:]) + str(hex(h2)[2:]) + str(hex(h3)[2:]) + str(hex(h4)[2:])
+    result = ""
+
+    for i in hash_parts:
+        temp_hex = hex(i)[2:] 
+
+        if len(temp_hex) < 8:
+            for j in range(0, 8 - len(temp_hex)):
+                temp_hex = "0" + temp_hex
+
+        result += temp_hex
 
     if len(result) == 40:
         print("That's right")
         print(result)
+        print(len(result))
 
     else:
         print("Smth wrong")
         print(result)
+        print(len(result))
     return result
 
 def main():
 
     message = input("enter some string\n")
-
-    # print(x := to_binary(message))
-
-    # print(add_padding(x))
-
     print(f"hash value = {sha_one_process(message)}")
 
 if __name__ == "__main__":

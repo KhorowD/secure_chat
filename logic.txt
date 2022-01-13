@@ -20,3 +20,6 @@
 7. Если магия успешна происходит обмен сообщениями
 
 py -m grpc_tools.protoc -I.  generated/chat.proto --python_out=. --grpc_python_out=.
+
+Ключ RSA = 300 bit
+

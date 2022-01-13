@@ -10,19 +10,24 @@ message Note {
     string message = 2;
 }
 
-message 
+message req_pq {
+    string nonce = 1;
+}
+
+message res_pq {
+    string nonce = 1;
+    string server_nonce = 2;
+    string pq = 3;
+    string pub_key_fingerprint = 4;
+}
+
 
 service ChatServer {
     // This bi-directional stream makes it possible to send and receive Notes between 2 persons
     rpc ChatStream (Empty) returns (stream Note);
     rpc SendNote (Note) returns (Empty);
+    rpc RequestPQ (req_pq) returns (res_pq); //Возвращает аутентификационную информацию со стороны сервера
 }
 
-service InitConnection {
-    // Сервер на запрос клиента отправляет информацию по его профилю
-}
 
-service InitSecretChat {
-    // Сервер на запрос клиента устанавливает секретный чат с запрашиваемым клиентом
-}
 

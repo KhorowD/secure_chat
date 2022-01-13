@@ -1,7 +1,7 @@
 import sys
 import threading
-from tkinter import *
-from tkinter import simpledialog
+# from tkinter import *
+# from tkinter import simpledialog
 from google.protobuf import message
 
 import grpc
@@ -13,8 +13,23 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import client_ui as ui
 from registration_dialog import Ui_RegisterForm
 
+from gamma import gen_key
+
 address = 'localhost'
 port = 8080
+
+# Функция для отображений сообщений об ошибке
+def message_box(text, title, icon, buttons):
+    message_wgt = QtWidgets.QMessageBox()
+    message_wgt.setText(text)
+    message_wgt.setWindowTitle(title)
+    message_wgt.setIcon(icon)
+    message_wgt.setStandardButtons(buttons)
+    if buttons == QtWidgets.QMessageBox.Ok:
+        message_wgt.exec_()
+    else:
+        retrn_value = message_wgt.exec_()
+        return retrn_value
 
 class ClientData():
     """
@@ -26,6 +41,14 @@ class ClientData():
         self.key_1 = ""
         self.key_2 = ""
         self.isRegistered = False #Если пользователь залогинился, тогда ставим True
+        self.nonce128 = ""
+        self.nonce256 = ""
+        self.server_nonce = ""
+
+class ServerData():
+    """
+    Структура для хранения полученных данных от сервера
+    """
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -36,10 +59,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.client_data = ClientData()
 
-        # dialog slot bindings
+        # Инициализация кнопок
 
         self.ui.actionLogin.triggered.connect(self.onActionLoginClicked)
         self.ui.btn_send_msg.clicked.connect(self.send_message)
+        self.ui.btn_gen_128_bits.clicked.connect(self.gen_128_bits)
+        self.ui.btn_gen_256_bits.clicked.connect(self.gen_256_bits)
+        self.ui.actionRegister.triggered.connect(self.request_pq)
     
         # the frame to put ui components on
         # self.window = window
@@ -61,6 +87,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.client_data.password = creds[1]
         # reg_form.
 
+
+    def gen_128_bits(self):
+
+        curr = self.ui.line_edit_128bits.text()
+
+        if curr != "":
+            self.ui.line_edit_128bits.setText("")
+
+        new_IV = gen_key(128)
+
+        self.ui.line_edit_128bits.setText(new_IV)
+
+    def gen_256_bits(self):
+
+        curr = self.ui.line_edit_256bits.text()
+
+        if curr != "":
+            self.ui.line_edit_256bits.setText("")
+
+        new_IV = gen_key(256)
+
+        self.ui.line_edit_256bits.setText(new_IV)
+
+
     def __listen_for_messages(self):
         """
         This method will be ran in a separate thread as the main/ui thread, because the for-in call is blocking
@@ -77,6 +127,11 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         # message = self.entry_message.get()  # retrieve message from the UI
 
+        if self.client_data.isRegistered == False:
+            message_box("Регистрация не пройдена!", "Error!",
+                    QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+            return None
+
         message = self.ui.text_input_msg.toPlainText()
 
         if message is not '':
@@ -84,8 +139,33 @@ class MainWindow(QtWidgets.QMainWindow):
             n.name = self.client_data.username  # set the username
             n.message = message  # set the actual message of the note
             print("S[{}] {}".format(n.name, n.message))  # debugging statement
-            self.conn.SendNote(n)  # send the Note to the server
+            try:
+                self.conn.SendNote(n)  # send the Note to the server
+            except Exception:
+                message_box("Проблема при отправке сообщения!", "Error!",
+                    QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+                return None
 
+    def request_pq(self):
+            
+        client_nonce = self.ui.line_edit_128bits.text()
+
+        if client_nonce == "":
+            message_box("IV 128 bit не задан", "Error!",
+                QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+            return None
+
+        request = chat.req_pq()
+        request.nonce = client_nonce
+
+        try:
+            response = self.conn.RequestPQ(request)
+        except Exception:
+            message_box("Запрос регистрации клиента неудачен", "Error!",
+                QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+            return None
+
+        print(response)
     # def __setup_ui(self):
     #     self.chat_list = Text()
     #     self.chat_list.pack(side=TOP)

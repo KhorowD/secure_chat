@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x14generated/chat.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"%\n\x04Note\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t2Z\n\nChatServer\x12\'\n\nChatStream\x12\x0b.grpc.Empty\x1a\n.grpc.Note0\x01\x12#\n\x08SendNote\x12\n.grpc.Note\x1a\x0b.grpc.Emptyb\x06proto3'
+  serialized_pb=b'\n\x14generated/chat.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"%\n\x04Note\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x17\n\x06req_pq\x12\r\n\x05nonce\x18\x01 \x01(\t\"V\n\x06res_pq\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\n\n\x02pq\x18\x03 \x01(\t\x12\x1b\n\x13pub_key_fingerprint\x18\x04 \x01(\t2\x83\x01\n\nChatServer\x12\'\n\nChatStream\x12\x0b.grpc.Empty\x1a\n.grpc.Note0\x01\x12#\n\x08SendNote\x12\n.grpc.Note\x1a\x0b.grpc.Empty\x12\'\n\tRequestPQ\x12\x0c.grpc.req_pq\x1a\x0c.grpc.res_pqb\x06proto3'
 )
 
 
@@ -88,8 +88,95 @@ _NOTE = _descriptor.Descriptor(
   serialized_end=76,
 )
 
+
+_REQ_PQ = _descriptor.Descriptor(
+  name='req_pq',
+  full_name='grpc.req_pq',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='nonce', full_name='grpc.req_pq.nonce', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=78,
+  serialized_end=101,
+)
+
+
+_RES_PQ = _descriptor.Descriptor(
+  name='res_pq',
+  full_name='grpc.res_pq',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='nonce', full_name='grpc.res_pq.nonce', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='server_nonce', full_name='grpc.res_pq.server_nonce', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pq', full_name='grpc.res_pq.pq', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pub_key_fingerprint', full_name='grpc.res_pq.pub_key_fingerprint', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=103,
+  serialized_end=189,
+)
+
 DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
 DESCRIPTOR.message_types_by_name['Note'] = _NOTE
+DESCRIPTOR.message_types_by_name['req_pq'] = _REQ_PQ
+DESCRIPTOR.message_types_by_name['res_pq'] = _RES_PQ
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
@@ -106,6 +193,20 @@ Note = _reflection.GeneratedProtocolMessageType('Note', (_message.Message,), {
   })
 _sym_db.RegisterMessage(Note)
 
+req_pq = _reflection.GeneratedProtocolMessageType('req_pq', (_message.Message,), {
+  'DESCRIPTOR' : _REQ_PQ,
+  '__module__' : 'generated.chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.req_pq)
+  })
+_sym_db.RegisterMessage(req_pq)
+
+res_pq = _reflection.GeneratedProtocolMessageType('res_pq', (_message.Message,), {
+  'DESCRIPTOR' : _RES_PQ,
+  '__module__' : 'generated.chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.res_pq)
+  })
+_sym_db.RegisterMessage(res_pq)
+
 
 
 _CHATSERVER = _descriptor.ServiceDescriptor(
@@ -115,8 +216,8 @@ _CHATSERVER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=78,
-  serialized_end=168,
+  serialized_start=192,
+  serialized_end=323,
   methods=[
   _descriptor.MethodDescriptor(
     name='ChatStream',
@@ -135,6 +236,16 @@ _CHATSERVER = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_NOTE,
     output_type=_EMPTY,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='RequestPQ',
+    full_name='grpc.ChatServer.RequestPQ',
+    index=2,
+    containing_service=None,
+    input_type=_REQ_PQ,
+    output_type=_RES_PQ,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
