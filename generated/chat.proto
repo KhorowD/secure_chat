@@ -36,6 +36,12 @@ message res_DH_params {
     string encrypted_data = 3;
 }
 
+message Error {
+    string nonce = 1;
+    string server_nonce = 2;
+    string error_message = 3;
+}
+
 service ChatServer {
     // This bi-directional stream makes it possible to send and receive Notes between 2 persons
     rpc ChatStream (Empty) returns (stream Note);

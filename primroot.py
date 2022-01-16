@@ -1,11 +1,11 @@
-from .pyecm import factors
+from pyecm import factors
 from gmpy2 import is_prime, f_div, mpz, mpfr, is_odd
 
 
 def primroot(n):
     s = set()
     # находим функцию эйлера
-    phi = n - 1
+    phi = mpz(n - 1)
 
     # факторизуем функцию эйлера
     s = set(factors(phi, False, True, 10, 1))

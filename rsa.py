@@ -3,7 +3,7 @@ from random import randint
 from math import gcd, log2
 import numpy as np
 from io import IOBase
-from .base_func import custom_pow
+from base_func import custom_pow
 
 # saved_data = None
 
@@ -90,7 +90,7 @@ def prepare_data(data):
 def delete_padding(data):
 
     last_byte = data[len(data) - 1]
-    print("     last_byte:", last_byte)
+    # print("     last_byte:", last_byte)
     if last_byte in [1, 2, 3, 4, 5, 6, 7]:
         null_bytes = data[len(data) - last_byte:len(data) - 1]
         print(null_bytes)
@@ -156,7 +156,7 @@ def encode(data, e_exp, N):
     # Делим данные на блоки
 
     # data, block_lenght  = prepare_data(data, N)
-    print("data to encode")
+    # print("data to encode")
     # for i in data:
     #     print(i)
     #     print(type(i))
@@ -168,7 +168,7 @@ def encode(data, e_exp, N):
     # encoded_data = [bin(fast_pow(data_part, e_exp, N))[2:] for data_part in data]
     encoded_data = [hex(fast_pow(data_part, e_exp, N))[2:] for data_part in data]
 
-    print("finaly hex encoded data")
+    # print("finaly hex encoded data")
     # print(encoded_data)
     # переводим назад в байты
 
@@ -207,13 +207,13 @@ def decode(data, d_exp, N):
     # Делим данные на блоки
 
     data  = de_prepare_data(data, N)
-    print("de_prepared data")
+    # print("de_prepared data")
     # print(data)
     # в цикле с помощью fast POW шифруем
     
     decoded_data = [fast_pow(data_part, d_exp, N) for data_part in data]
 
-    print("finaly decoded data")
+    # print("finaly decoded data")
     # print(decoded_data)
     # переводим назад в байты
 

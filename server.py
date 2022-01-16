@@ -1,4 +1,6 @@
+from ast import arg
 from concurrent import futures
+import re
 
 import server_ui as ui
 
@@ -6,6 +8,7 @@ import grpc
 import time
 import sys
 import threading
+import pprint
 from random import randint
 from bitarray import util
 
@@ -17,6 +20,8 @@ from base_func import prime_gen_rm
 from sha_one import sha_one_process
 import gost
 import rsa
+import dh as diffie_hellman
+from cryptography.hazmat.primitives.asymmetric import dh
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -50,6 +55,13 @@ class ClientContext():
         self.server_rsa_n_value = ""
         self.dh_pub_key = ""
         self.dh_priv_key = ""
+        self.dh_g = ""
+        self.dh_p = ""
+        self.dh_server_pub_key = ""
+        self.dh_server_priv_key = ""
+
+    def __print__(self):
+        pprint.pprint(self.__dict__)
         
 
 class ServerData():
@@ -102,11 +114,19 @@ class ServerData():
 
 server_data = ServerData()
 
+class LogEventSignal(QtCore.QObject):
+    log_event_sig = QtCore.pyqtSignal(str)
+
 class MainWindow(QtWidgets.QMainWindow):
+
+    log_event = QtCore.pyqtSlot(str)
+
+
     def __init__(self):
         super().__init__()
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
+        self.server = None
         # server_data = ServerData()
         isKeysLoaded = server_data.load_keys_from_file("./server_keys.txt")
         
@@ -146,12 +166,12 @@ class MainWindow(QtWidgets.QMainWindow):
         port = 8080  # a random port for the server to run on
         # the workers is like the amount of threads that can be opened at the same time, when there are 10 clients connected
         # then no more clients able to connect to the server.
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  # create a gRPC server
-        rpc.add_ChatServerServicer_to_server(ChatServer(), server)  # register the server to gRPC
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  # create a gRPC server
+        rpc.add_ChatServerServicer_to_server(ChatServer(), self.server)  # register the server to gRPC
         # gRPC basically manages all the threading and server responding logic, which is perfect!
         print('Starting server. Listening...')
-        server.add_insecure_port('[::]:' + str(port))
-        server.start()
+        self.server.add_insecure_port('[::]:' + str(port))
+        self.server.start()
         # Server starts in background (in another thread) so keep waiting
         # if we don't wait here the main thread will end, which will end all the child threads, and thus the threads
         # from the server won't continue to work and stop the server
@@ -159,7 +179,7 @@ class MainWindow(QtWidgets.QMainWindow):
             while True:
                 time.sleep(64 * 64 * 100)
         except (KeyboardInterrupt, SystemExit):
-            server.stop()
+            self.server.stop(0)
 
     def log_event(self, text):
         self.ui.log_box.append(text)
@@ -170,6 +190,125 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         # List with all the chat history
         self.chats = []
         self.clients = []
+        
+    def make_error_message(self, text):
+        """
+        Функция формирующая сообщение об ошибке
+        """
+        pass
+
+    def kdf(self, server_nonce, nonce_new):
+
+        sha_nonces_1 = sha_one_process(nonce_new + server_nonce)
+
+        sha_nonces_2 = sha_one_process(server_nonce + nonce_new)
+
+        sha_nonces_3 = sha_one_process(nonce_new + nonce_new)
+
+        print(sha_nonces_1, sha_nonces_2, sha_nonces_3)
+
+        tmp_gost_key = util.hex2ba(sha_nonces_1).to01() + util.hex2ba(sha_nonces_2[:24]).to01()
+        
+        tmp_gost_iv = util.hex2ba(sha_nonces_2[24:41]).to01() + util.hex2ba(sha_nonces_3).to01() + nonce_new[:32]
+
+        return tmp_gost_key, tmp_gost_iv
+
+        
+    def make_DH_response(self, response: chat.res_DH_params, curr_client: ClientContext):
+        """
+        Функция формирования ответа на втором шаге авторизации
+
+        Здесь отправляются данные для DH
+
+        """
+        # Устанавливаем данные для проверки сессии
+        response.nonce = curr_client.nonce
+        response.server_nonce = curr_client.server_nonce
+
+        # Расчитываем параметры DH 
+        # g, q, p = dh.calc_parametrs(300, 'RM')
+        parameters_dh = dh.generate_parameters(2, 2048)
+
+        # print(parameters_dh.parameter_numbers())
+
+        # pprint(g, p)
+        # print(g, p)
+
+        
+         # Расчитываем ключи для сервера
+        server_dh_priv_key, server_dh_pub_key = diffie_hellman.gen_key_pair(parameters_dh.parameter_numbers().p, parameters_dh.parameter_numbers().g)
+        print(server_dh_priv_key, server_dh_pub_key)
+
+        
+
+
+        #Сохраняяем ключи в контексте клиента
+        curr_client.dh_g = hex(parameters_dh.parameter_numbers().g)
+        curr_client.dh_p = hex(parameters_dh.parameter_numbers().p)
+        curr_client.dh_server_pub_key = server_dh_pub_key
+        curr_client.dh_server_priv_key = server_dh_priv_key
+
+        # Формируем данные для шифрования 
+
+        # Находим хэш нового nonce от клиента
+        # new_nonce_fingerprint = sha_one_process(curr_client.nonce_new)
+
+        # new_nonce_fingerprint = util.hex2ba(new_nonce_fingerprint)
+
+        # new_nonce_fingerprint = new_nonce_fingerprint.to01()[32:]
+
+        # data = new_nonce_fingerprint
+
+        data_answer = (curr_client.nonce +"\n"+curr_client.server_nonce + "\n"
+                        + curr_client.dh_g + "\n" + curr_client.dh_p + "\n" 
+                        + str(curr_client.dh_server_pub_key) + "\n" + str(time.time()))
+
+        data_answer_with_hash = sha_one_process(data_answer) + "\n" + data_answer
+
+        tmp_gost_key, tmp_gost_iv = self.kdf(curr_client.server_nonce, curr_client.nonce_new)
+
+        # sha_nonces_1 = sha_one_process(curr_client.nonce_new+curr_client.server_nonce)
+
+        # sha_nonces_2 = sha_one_process(curr_client.server_nonce+curr_client.nonce_new)
+
+        # sha_nonces_3 = sha_one_process(curr_client.nonce_new+curr_client.nonce_new)
+
+        # print(sha_nonces_1, sha_nonces_2, sha_nonces_3)
+
+        # tmp_gost_key = util.hex2ba(sha_nonces_1).to01() + util.hex2ba(sha_nonces_2[:24]).to01()
+        
+        # tmp_gost_iv = util.hex2ba(sha_nonces_2[24:41]).to01() + util.hex2ba(sha_nonces_3).to01() + curr_client.nonce_new[:32]
+        
+        print(f"key = {tmp_gost_key}\niv = {tmp_gost_iv}")
+        print(f"key_len = {len(tmp_gost_key)}\niv_len = {len(tmp_gost_iv)}")
+
+        data_to_encrypt = data_answer_with_hash + "\n" + tmp_gost_key + "\n" + tmp_gost_iv
+
+        prepared_keys = [tmp_gost_key[x:x + 32] for x in range(0, len(tmp_gost_key), 32)]
+
+        print(data_to_encrypt)
+        print(prepared_keys)
+
+        print(tmp_gost_iv[:64], len(tmp_gost_iv[:64]))
+
+        try:
+            encrypted_data = gost.mode_OFB(data_to_encrypt, prepared_keys, tmp_gost_iv[:64], None)
+        except Exception as e:
+            print(e)
+            return chat.Empty()
+
+
+        # Формируем ответ в котором отправляем параметры для DH
+        response = chat.res_DH_params()
+        response.nonce = curr_client.nonce
+        response.server_nonce = curr_client.server_nonce
+        response.encrypted_data = gost.to_hex(encrypted_data)
+
+        return response
+        
+
+
+
 
     # Поток предназначенный для отправки сообщений клиентам
     def ChatStream(self, request_iterator, context):
@@ -218,6 +357,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
         # Устанавливаем nonce клиента
         new_client.nonce = request.nonce
+        server_response.nonce = request.nonce
 
         # Генерируем nonce сервера
         server_response.server_nonce = gen_IV(128)
@@ -284,24 +424,77 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         """
         Вызовываемый клиентом метод, для прохождения получения параметров DH
         """
+        print("start req_DH process")
 
-        # Опредляем индекс клиента запросившего параметры DH
-        current_client_index = None
+        print(f"request values:\n {request}")
 
-        for client in self.clients:
-            if client.nonce == request.nonce and client.server_nonce == request.server_nonce:
-                current_client_index = self.clients.index(client)
+        try:
 
-        decoded_data = rsa.decode(request.encrypted_data, self.clients[current_client_index].server_rsa_priv_key, self.clients[current_client_index].server_rsa_n_value)
+            # Опредляем индекс клиента запросившего параметры DH
+            current_client_index = None
+
+            for client in self.clients:
+                if client.nonce == request.nonce and client.server_nonce == request.server_nonce:
+                    current_client_index = self.clients.index(client)
+                    print(current_client_index)
+
+        except Exception as e:
+            print(e)
+            return chat.Empty()
+
+        recv_encrypted_data = request.encrypted_data #.split("\n")
+
+        # print(recv_encrypted_data[0])
+
+        try:
+            decoded_data = rsa.decode(recv_encrypted_data, "0x" + self.clients[current_client_index].server_rsa_priv_key, "0x" + self.clients[current_client_index].server_rsa_n_value)
+        except Exception as e:
+            print(e)
+            return chat.Empty()
+ 
+        # print(f"decoded_data rsa = {decoded_data}")
+
+        decoded_serialized_data = "".join(chr(x) for x in decoded_data)
+
+        # decoded_data = decoded_data.split(" ")
+
+        # print(f"DH req decoded data: \n{decoded_serialized_data}")
+
+        decoded_request_values = decoded_serialized_data.split("\n")
         
-        decoded_data = decoded_data.split("\n")
+        # Проверяем достоверность полученных данных с помощью хэша
+        decoded_hash = decoded_request_values[0]
 
-        
+        checked_payload = decoded_serialized_data[41:]
 
+        checked_hash = sha_one_process(checked_payload)
+
+        if decoded_hash == checked_hash:
+            print("Данные запроса DH верифицированы")
+        else:
+            print("Данные запроса DH не верифицированы")
+            return chat.Empty()
+
+        self.clients[current_client_index].p = decoded_request_values[2]
+        self.clients[current_client_index].q = decoded_request_values[3]
+        self.clients[current_client_index].nonce_new = decoded_request_values[6]
+
+        self.clients[current_client_index].__print__()
+
+        # Формирум ответ для клиента 
         response = chat.res_DH_params()
 
+        response = self.make_DH_response(response, self.clients[current_client_index])
 
-        pass
+        return response
+
+        
+        
+
+
+
+
+        
 
 if __name__ == '__main__':
     

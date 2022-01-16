@@ -1,10 +1,13 @@
 # import primegen
+from cmath import e
 import re
 import time
 import secrets
 from random import randint, SystemRandom
-from .primroot import primroot
-from .base_func import prime_gen_rm, RM_test, custom_pow
+from primroot import primroot
+from base_func import prime_gen_rm, RM_test, custom_pow
+from gmpy2 import mpz, is_strong_prp
+
 
 # Вычисляем параметры базовые p,q,g
 
@@ -20,15 +23,16 @@ def calc_parametrs(len_bits, flag="prim_root"):
 
     else: 
         isNotPrime = True
+        g = [2, 3, 4, 5, 6, 7]
 
         print("choose q, p")
         while isNotPrime:
             # p = int(prime_gen_rm(len_bits),
             #         2)  # генерируем число нужного числа бит и переводим в инт
-            q = int(prime_gen_rm(len_bits),
-                    2)  # генерируем число нужного числа бит и переводим в инт
+            q = mpz(int(prime_gen_rm(len_bits),
+                    2))  # генерируем число нужного числа бит и переводим в инт
             # q = p // 2  # Предпологаем что q большое простое число
-            p = 2*q + 1
+            p = mpz(2*q + 1)
             if RM_test(bin(p)[2:]): # Проверяем q на простоту
                 if p % q == 1:  # В случае, если оно большое простое число порядка p/2
                     isNotPrime = False  # Устанавливаем флаг что оно простое
@@ -38,12 +42,17 @@ def calc_parametrs(len_bits, flag="prim_root"):
 
         isNotPrimeRoot = True
         while isNotPrimeRoot:
-            g = randint(2, p - 1)
-            if pow(g, q, p) != 1:
+
+            g_ind = randint(0, 5)
+            if pow(g[g_ind], q, p) != 1:
                 isNotPrimeRoot = False
-        print(f"g = {g}")
+        print(f"g = {g[g_ind]}")
+
+        g = g[g_ind]
 
     print(f"time (min) = {(time.time() - start_time)/60}")
+
+    print()
 
     return g, q, p
 
@@ -55,11 +64,16 @@ def gen_key_pair(p, g):
     
     abonent_secret = 1
 
-    while abonent_secret == 1:
-        abonent_secret = secrets.randbelow(
-            p - 1)  # Генерируем с помощью безопасного генератора
-        abonent_open = pow(g, abonent_secret, p)
+    try:
+
+        while abonent_secret == 1:
+            abonent_secret = secrets.randbelow(
+                p - 1)  # Генерируем с помощью безопасного генератора
+            abonent_open = pow(g, abonent_secret, p)
     
+    except Exception as e:
+        print(e)
+
     return abonent_secret, abonent_open
 
 #Процесс вычисления общего ключа
@@ -86,46 +100,46 @@ def convert_int_to_chars(num_to_decode):
     return "".join([chr(num) for num in num_to_decode])
 
 
-def dh_encode(msg_to_encode):
+# def dh_encode(msg_to_encode):
 
-    # переводим символы в числа
-    numbers_list = convert_chars_to_int(msg_to_encode)
+#     # переводим символы в числа
+#     numbers_list = convert_chars_to_int(msg_to_encode)
 
-    print(numbers_list)
+#     print(numbers_list)
 
-    # генерируем простые числа
-    a_priv = primegen.prime_gen(40)
-    b_priv = primegen.prime_gen(40)
+#     # генерируем простые числа
+#     a_priv = primegen.prime_gen(40)
+#     b_priv = primegen.prime_gen(40)
 
-    p = primegen.prime_gen(50)
-    q = primroot(p)
+#     p = primegen.prime_gen(50)
+#     q = primroot(p)
 
-    print(f"prime = {p}\n")
+#     print(f"prime = {p}\n")
 
-    print(f"primitive root = {q}\n")
+#     print(f"primitive root = {q}\n")
 
-    A_pub = pow(q, a_priv, p)
-    B_pub = pow(q, b_priv, p)
+#     A_pub = pow(q, a_priv, p)
+#     B_pub = pow(q, b_priv, p)
 
-    print(f"A_pub = {A_pub}, A_priv = {a_priv}\n")
+#     print(f"A_pub = {A_pub}, A_priv = {a_priv}\n")
 
-    print(f"B_pub = {B_pub}, A_priv = {b_priv}\n")
+#     print(f"B_pub = {B_pub}, A_priv = {b_priv}\n")
 
-    K_a = pow(B_pub, a_priv, p)
-    K_b = pow(A_pub, b_priv, p)
+#     K_a = pow(B_pub, a_priv, p)
+#     K_b = pow(A_pub, b_priv, p)
 
-    print(f"secret key = {K_a}\n")
+#     print(f"secret key = {K_a}\n")
 
-    print("Use cesar for encoding with sec. key\n")
-    encoded_num = [(num + K_a) % 255 for num in numbers_list]
-    print(encoded_num)
+#     print("Use cesar for encoding with sec. key\n")
+#     encoded_num = [(num + K_a) % 255 for num in numbers_list]
+#     print(encoded_num)
 
-    return convert_int_to_chars(encoded_num), K_a
+#     return convert_int_to_chars(encoded_num), K_a
 
 
-def dh_decode(msg_to_decode, key):
-    return convert_int_to_chars([(ord(ch) - key) % 255
-                                 for ch in msg_to_decode])
+# def dh_decode(msg_to_decode, key):
+#     return convert_int_to_chars([(ord(ch) - key) % 255
+#                                  for ch in msg_to_decode])
 
 
 def main():
@@ -152,7 +166,7 @@ def main():
 
     # print("Декодированное сообщение: " + decoded_message)
 
-    g, q, p = calc_parametrs(500)
+    g, q, p = calc_parametrs(512, flag="a")
 
     print(g, q, p)
 

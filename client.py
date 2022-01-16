@@ -18,6 +18,7 @@ from registration_dialog import Ui_RegisterForm
 from gamma import gen_key
 from pyecm import factors
 from sha_one import sha_one_process
+import rsa
 import gost
 
 address = 'localhost'
@@ -48,9 +49,14 @@ class ClientData():
         self.isRegistered = False #Если пользователь залогинился, тогда ставим True
         self.nonce128 = ""
         self.nonce256 = ""
+        self.pq = ""
         self.p = 0
         self.q = 0
         self.server_pub_key_fingerprint = ""
+        self.dh_p = ""
+        self.dh_g = ""
+        self.dh_pub_key = ""
+        self.dh_priv_key = ""
 
         
 
@@ -63,10 +69,8 @@ class ServerData():
         self.current_key_id = 0
         self.server_nonce = ""
         self.rsa_pub_key = ""
-        self.rsa_priv_key = ""
         self.rsa_n_value = ""
         self.dh_pub_key = ""
-        self.dh_priv_key = ""
 
 
     def load_keys_from_file(self, file_path) -> bool:
@@ -190,6 +194,76 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.line_edit_256bits.setText(new_IV)
 
+    def make_encrypted_data(self):
+        """
+        Функция предназначена для создания шифрованных данных,
+        Отправляемых на втором шаге авторизации, для выработки ключей DH
+        
+        
+        Здесь на выходе мы получаем строку зашифрованную строку
+
+        data:
+            pq
+            p
+            q
+            c_nonce128
+            s_nonce128
+            c_new_nonce256
+        """
+        # ВЫчисляем новый nonce клиента (256 бит)
+        client_new_nonce = self.ui.line_edit_256bits.text()
+
+        if client_new_nonce == "":
+            message_box("IV 256 bit не задан", "Error!",
+                QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+            return None
+
+        self.client_data.nonce256 = client_new_nonce
+
+        data = self.client_data.pq + "\n" + self.client_data.p.digits() + "\n" + self.client_data.q.digits()
+        data += "\n" + self.client_data.nonce128
+        data += "\n" + self.server_data.server_nonce
+        data += "\n" + self.client_data.nonce256
+
+        print(f"DH req data to encrypt = {data}")
+
+        sha1_data = sha_one_process(data)
+        
+        print(f"DH req SHA1(data) to encrypt = {sha1_data}")
+
+        data_with_hash = sha1_data +"\n"+ data
+
+        print(f"DH req data_with_hash to encrypt = {data_with_hash}")
+        print(f"DH req data_with_hash len = {len(data_with_hash)}")
+
+        prepared_data_with_hash = rsa.to_bytes(data_with_hash)
+
+        encrypted_data = rsa.encode(prepared_data_with_hash, "0x" + self.server_data.rsa_pub_key, "0x" + self.server_data.rsa_n_value)
+
+        encrypted_data = "\n".join(encrypted_data)
+
+        print(encrypted_data)
+
+        return encrypted_data       
+
+    def kdf(self, server_nonce, nonce_new):
+        """
+        Функция kdf - Для формирования временного ключа на основе nonce
+        """
+
+        sha_nonces_1 = sha_one_process(nonce_new + server_nonce)
+
+        sha_nonces_2 = sha_one_process(server_nonce + nonce_new)
+
+        sha_nonces_3 = sha_one_process(nonce_new + nonce_new)
+
+        print(sha_nonces_1, sha_nonces_2, sha_nonces_3)
+
+        tmp_gost_key = util.hex2ba(sha_nonces_1).to01() + util.hex2ba(sha_nonces_2[:24]).to01()
+        
+        tmp_gost_iv = util.hex2ba(sha_nonces_2[24:41]).to01() + util.hex2ba(sha_nonces_3).to01() + nonce_new[:32]
+
+        return tmp_gost_key, tmp_gost_iv
 
     def __listen_for_messages(self):
         """
@@ -239,6 +313,11 @@ class MainWindow(QtWidgets.QMainWindow):
         request = chat.req_pq()
         request.nonce = client_nonce
 
+        # Сохраняем nonce клиента
+
+        self.client_data.nonce128 = client_nonce
+        
+
         try:
             response = self.conn.RequestPQ(request)
         except Exception as e:
@@ -268,6 +347,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.client_data.server_pub_key_fingerprint == rsa_fingerprint:
                 self.log_event("Хэш ключа верифицирован.")
                 self.server_data.current_key_id = i
+                self.server_data.rsa_n_value = current_key["N"]
+                self.server_data.rsa_pub_key = current_key["pub_key"]
                 break
         else:
             self.log_event("Не найдено представление открытого ключа сервера в текущих ключах")
@@ -278,6 +359,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Сохраняем серверный nonce 
         self.server_data.server_nonce = response.server_nonce
+
+        # Сохраняем полученный pq
+        self.client_data.pq = response.pq
 
         # Пытаемся факторизовать полученное число (Proof of work)
         proof_result = self.factorize(int(response.pq, 10))
@@ -299,9 +383,73 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def request_dh(self):
 
+        # Формируем ответ запроса 
 
+        request = chat.req_DH_params()
 
-        pass
+        request.nonce = self.client_data.nonce128
+        request.server_nonce = self.server_data.server_nonce
+        request.p = str(self.client_data.p)
+        request.q = str(self.client_data.q)
+        request.public_key_fingerprint = self.client_data.server_pub_key_fingerprint
+        request.encrypted_data = self.make_encrypted_data()
+
+        try:
+            response = self.conn.RequestDH(request)
+        except Exception as e:
+            print(e)
+            message_box("Запрос регистрации клиента неудачен", "Error!",
+                QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+            return None
+
+        # Обрабатываем полученный ответ
+
+        # print(response)
+
+        if response.nonce == self.client_data.nonce128 and response.server_nonce == self.server_data.server_nonce:
+            print("Ответ на запрос DH получен")
+            self.log_event("Ответ на запрос DH получен")
+        else:
+            print("Ответ на запрос DH не верифицирован")
+            self.log_event("Ответ на запрос DH не верифицирован. Неверные nonce от сервера")
+
+        # Формируем ключи для расшифровки запроса
+        tmp_gost_key, tmp_gost_iv = self.kdf(self.server_data.server_nonce, self.client_data.nonce256)        
+
+        data_to_decrypt = gost.from_hex(response.encrypted_data)
+
+        prepared_keys = [tmp_gost_key[x:x + 32] for x in range(0, len(tmp_gost_key), 32)]
+
+        decrypted_data = gost.mode_OFB(data_to_decrypt, prepared_keys, tmp_gost_iv[:64], None, reverse=True)
+
+        decrypted_data = gost.to_str(decrypted_data).split("\n")
+
+        # Проверяем валидность полученных данных
+
+        data_answer_hash = decrypted_data[0]
+
+        checked_payload = "\n".join(decrypted_data[i] for i in range(1, 7))
+
+        payload_hash = sha_one_process(checked_payload)
+
+        print(payload_hash)
+
+        if data_answer_hash == payload_hash:
+            print("Данные в запросе DH верифицированы")
+            self.log_event("Данные в запросе DH верифицированы")
+        else:
+            print("Данные на запрос DH не верифицированы")
+            self.log_event("Данные на запрос DH не верифицированы. Неверный hash") 
+
+        print(decrypted_data)
+
+        # Устанавливаем полученные значения
+        self.ui.line_edit_dh_g.setText(decrypted_data[3])
+        self.ui.line_edit_dh_p.setText(decrypted_data[4])
+
+        # self.client_data.dh
+
+        # self.server_data.dh_pub_key = 
 
 class RegistrationForm(QtWidgets.QDialog):
     """

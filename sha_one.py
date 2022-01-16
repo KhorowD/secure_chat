@@ -162,6 +162,8 @@ def add_padding(chunks: list, msg_lenght: int):
 
     target_chunk = chunks[last_chunk]
 
+    new_chunk = ""
+
     # Проверяем блок на выполнение условий
 
     if last_chunk_lenght < 448:

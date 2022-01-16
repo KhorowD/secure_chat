@@ -1,7 +1,7 @@
 import time
 from sympy import prime
 from random import randint, random, getrandbits
-from gmpy2 import is_prime, f_div, mpz, mpfr, is_odd
+from gmpy2 import is_prime, f_div, mpz, mpfr, is_odd, is_strong_prp
 
 FIRST_2000_PRIME = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
@@ -155,7 +155,6 @@ def choose_base_number(lenght):
 
     return start_number
 
-
 def test_div_first_2000(test_number):
     """
     Функция проверки делимости на первые простые числа < 2k
@@ -179,9 +178,9 @@ def RM_test(test_number):
     # Проверка на делимость первых 256 простых чисел
     if test_div_first_2000(bin(test_number)[2:]): return False
 
-    power = 0
-    remainder = 0
-    number_to_div_2 = test_number - 1
+    power = 0#mpz(0)
+    remainder = 0#mpz(0)
+    number_to_div_2 =test_number - 1 #mpz(test_number - 1)
 
     while (remainder % 2 == 0):
         number_to_div_2, remainder = divmod(number_to_div_2, 2)
@@ -206,6 +205,16 @@ def RM_test(test_number):
 
     return True
 
+# @jit(fastmath=True, parallel=True)
+def RM_test_gmpy(test_number):
+    """
+    Вариант проверки простоты с помощью gmpy2
+    """
+
+    test_number = mpz(int(test_number, 2))
+
+    return is_strong_prp(test_number, 2)
+
 
 def prime_gen_rm(key_lenght):
     """
@@ -218,12 +227,6 @@ def prime_gen_rm(key_lenght):
         # Формируем стартовое значение
         start_number = choose_base_number(key_lenght)
 
-        # проверяем стартовое значение на делимость простых чисел < 2k
-        # if test_div_first_2000(
-        #         start_number
-        # ):  #если тест не пройден, вернется True и заходим на новую итерацию
-        #     continue
-        # else:
         if RM_test(start_number):
             return start_number
         else:

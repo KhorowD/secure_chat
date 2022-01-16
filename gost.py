@@ -104,6 +104,24 @@ def to_bytes(input_data):
 
     return input_bytes
 
+def to_hex(input_data):
+    """
+    Переводим массив байт в строку или hex
+    """
+    return np.array(input_data, dtype="uint8").tobytes().hex()
+    
+def from_hex(input_data):
+    """
+    Переводим hex-строку в байты
+    """
+
+    return bytes.fromhex(input_data)
+
+def to_str(input_data):
+    """
+    Переводим список байт в строку и декодируем ее
+    """
+    return np.array(input_data, dtype="uint8").tobytes().decode()
 
 def gen_round_key(key):
     """
@@ -296,8 +314,11 @@ def mode_ECB(data, keys, progress_bar, reverse=False):
 
 
 def mode_OFB(data, keys, init_vect, progress_bar, reverse=False):
+    
     # преобразуем данные в байты
     input_bytes = to_bytes(data)
+
+    print(input_bytes)
 
     # Добавляем паддинг
     prepared_data = prepare_data(input_bytes)
@@ -317,11 +338,11 @@ def mode_OFB(data, keys, init_vect, progress_bar, reverse=False):
 
     encoded_blocks = []
 
-    bar_curr_value = 0.0
+    # bar_curr_value = 0.0
 
-    progress_bar.setValue(bar_curr_value)
+    # progress_bar.setValue(bar_curr_value)
 
-    bar_step_value = 100 / len(blocks_64)
+    # bar_step_value = 100 / len(blocks_64)
 
     # Для каждого блока проводим шифрование
     for block in blocks_64:
@@ -360,8 +381,8 @@ def mode_OFB(data, keys, init_vect, progress_bar, reverse=False):
         encoded_blocks.extend(int_result_block)
 
         # Работа с progress bar
-        bar_curr_value += bar_step_value
-        progress_bar.setValue(bar_curr_value)
+        # bar_curr_value += bar_step_value
+        # progress_bar.setValue(bar_curr_value)
 
     if reverse == True:
         encoded_blocks = delete_padding(encoded_blocks)
