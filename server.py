@@ -77,6 +77,7 @@ class ServerData():
         self.dh_priv_key = ""
         self.server_nonce = ""
         self.pq = ""
+        self.last_msg_time = 0.0
 
     def load_keys_from_file(self, file_path) -> bool:
         """
@@ -226,59 +227,31 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         response.server_nonce = curr_client.server_nonce
 
         # Расчитываем параметры DH 
-        # g, q, p = dh.calc_parametrs(300, 'RM')
         parameters_dh = dh.generate_parameters(2, 2048)
 
-        # print(parameters_dh.parameter_numbers())
-
-        # pprint(g, p)
-        # print(g, p)
-
-        
          # Расчитываем ключи для сервера
         server_dh_priv_key, server_dh_pub_key = diffie_hellman.gen_key_pair(parameters_dh.parameter_numbers().p, parameters_dh.parameter_numbers().g)
         print(server_dh_priv_key, server_dh_pub_key)
 
-        
-
-
+       
         #Сохраняяем ключи в контексте клиента
         curr_client.dh_g = hex(parameters_dh.parameter_numbers().g)
         curr_client.dh_p = hex(parameters_dh.parameter_numbers().p)
         curr_client.dh_server_pub_key = server_dh_pub_key
         curr_client.dh_server_priv_key = server_dh_priv_key
 
-        # Формируем данные для шифрования 
+        server_time = time.time()
 
-        # Находим хэш нового nonce от клиента
-        # new_nonce_fingerprint = sha_one_process(curr_client.nonce_new)
-
-        # new_nonce_fingerprint = util.hex2ba(new_nonce_fingerprint)
-
-        # new_nonce_fingerprint = new_nonce_fingerprint.to01()[32:]
-
-        # data = new_nonce_fingerprint
+        server_data.last_msg_time = server_time
 
         data_answer = (curr_client.nonce +"\n"+curr_client.server_nonce + "\n"
                         + curr_client.dh_g + "\n" + curr_client.dh_p + "\n" 
-                        + str(curr_client.dh_server_pub_key) + "\n" + str(time.time()))
+                        + str(curr_client.dh_server_pub_key) + "\n" + str(server_time))
 
         data_answer_with_hash = sha_one_process(data_answer) + "\n" + data_answer
 
         tmp_gost_key, tmp_gost_iv = self.kdf(curr_client.server_nonce, curr_client.nonce_new)
 
-        # sha_nonces_1 = sha_one_process(curr_client.nonce_new+curr_client.server_nonce)
-
-        # sha_nonces_2 = sha_one_process(curr_client.server_nonce+curr_client.nonce_new)
-
-        # sha_nonces_3 = sha_one_process(curr_client.nonce_new+curr_client.nonce_new)
-
-        # print(sha_nonces_1, sha_nonces_2, sha_nonces_3)
-
-        # tmp_gost_key = util.hex2ba(sha_nonces_1).to01() + util.hex2ba(sha_nonces_2[:24]).to01()
-        
-        # tmp_gost_iv = util.hex2ba(sha_nonces_2[24:41]).to01() + util.hex2ba(sha_nonces_3).to01() + curr_client.nonce_new[:32]
-        
         print(f"key = {tmp_gost_key}\niv = {tmp_gost_iv}")
         print(f"key_len = {len(tmp_gost_key)}\niv_len = {len(tmp_gost_iv)}")
 
@@ -306,9 +279,6 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
         return response
         
-
-
-
 
     # Поток предназначенный для отправки сообщений клиентам
     def ChatStream(self, request_iterator, context):

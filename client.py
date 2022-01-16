@@ -1,13 +1,10 @@
 import sys
 import threading
-# from tkinter import *
-# from tkinter import simpledialog
 from google.protobuf import message
 from bitarray import util
 
 
 import grpc
-
 import generated.chat_pb2 as chat
 import generated.chat_pb2_grpc as rpc
 
@@ -20,6 +17,8 @@ from pyecm import factors
 from sha_one import sha_one_process
 import rsa
 import gost
+import dh as diffie_hellman
+from cryptography.hazmat.primitives.asymmetric import dh
 
 address = 'localhost'
 port = 8080
@@ -71,6 +70,7 @@ class ServerData():
         self.rsa_pub_key = ""
         self.rsa_n_value = ""
         self.dh_pub_key = ""
+        self.last_msg_time = 0.0
 
 
     def load_keys_from_file(self, file_path) -> bool:
@@ -124,7 +124,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.log_event("Произошла ошибка при установке ключей сервера")
             
-
         # Инициализация кнопок
 
         self.ui.actionLogin.triggered.connect(self.onActionLoginClicked)
@@ -133,16 +132,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.btn_gen_256_bits.clicked.connect(self.gen_256_bits)
         self.ui.actionRegister.triggered.connect(self.request_pq)
     
-        # the frame to put ui components on
-        # self.window = window
-        # self.username = u
+
         # # create a gRPC channel + stub
         channel = grpc.insecure_channel(address + ':' + str(port))
         self.conn = rpc.ChatServerStub(channel)
         # create new listening thread for when new message streams come in
         threading.Thread(target=self.__listen_for_messages, daemon=True).start()
-        # self.__setup_ui()
-        # self.window.mainloop()
+        
 
     def onActionLoginClicked(self):
         """
@@ -150,11 +146,10 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         reg_form = RegistrationForm(self)
         reg_form.exec()
-        creds = reg_form.get_current_user_credits()
+        credentials = reg_form.get_current_user_credits()
         self.client_data.isRegistered = True
-        self.client_data.username = creds[0]
-        self.client_data.password = creds[1]
-        # reg_form.
+        self.client_data.username = credentials[0]
+        self.client_data.password = credentials[1]
 
     def log_event(self, text):
         """
@@ -245,6 +240,25 @@ class MainWindow(QtWidgets.QMainWindow):
         print(encrypted_data)
 
         return encrypted_data       
+
+    def gen_client_dh_keys(self):
+        """
+        Функция отвечает за формирование ключей DH клиента
+        """
+        # Расчитываем параметры DH 
+        pn = dh.DHParameterNumbers(int(self.client_data.dh_p), int(self.client_data.dh_g))
+        parameters_dh = pn.parameters()
+
+         # Расчитываем ключи для сервера
+        client_dh_priv_key, client_dh_pub_key = diffie_hellman.gen_key_pair(parameters_dh.parameter_numbers().p, parameters_dh.parameter_numbers().g)
+        # print(server_dh_priv_key, server_dh_pub_key)
+
+       
+        #Сохраняяем ключи в контексте клиента
+        self.client_data.dh_priv_key = client_dh_priv_key
+        self.client_data.dh_pub_key = client_dh_pub_key
+
+        return client_dh_priv_key, client_dh_pub_key
 
     def kdf(self, server_nonce, nonce_new):
         """
@@ -404,8 +418,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Обрабатываем полученный ответ
 
-        # print(response)
-
         if response.nonce == self.client_data.nonce128 and response.server_nonce == self.server_data.server_nonce:
             print("Ответ на запрос DH получен")
             self.log_event("Ответ на запрос DH получен")
@@ -447,9 +459,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.line_edit_dh_g.setText(decrypted_data[3])
         self.ui.line_edit_dh_p.setText(decrypted_data[4])
 
-        # self.client_data.dh
+        self.client_data.dh_g = decrypted_data[3]
+        self.client_data.dh_p = decrypted_data[4]
 
-        # self.server_data.dh_pub_key = 
+        self.server_data.dh_pub_key = decrypted_data[5]
+
+        self.server_data.last_msg_time = float(decrypted_data[6])
+
+        
+
+
 
 class RegistrationForm(QtWidgets.QDialog):
     """

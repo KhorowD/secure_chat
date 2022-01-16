@@ -36,6 +36,19 @@ message res_DH_params {
     string encrypted_data = 3;
 }
 
+message set_DH_params {
+    string nonce = 1;
+    string server_nonce = 2;
+    string encrypted_data = 3;
+}
+
+message dh_gen_ans {
+    string nonce = 1;
+    string server_nonce = 2;
+    string new_nonce_hash_type = 3;
+}
+
+
 message Error {
     string nonce = 1;
     string server_nonce = 2;
@@ -48,6 +61,7 @@ service ChatServer {
     rpc SendNote (Note) returns (Empty);
     rpc RequestPQ (req_pq) returns (res_pq); //Возвращает аутентификационную информацию со стороны сервера
     rpc RequestDH (req_DH_params) returns (res_DH_params); // Возвращаем ответ на запрос параметров DH
+    rpc SetClientDH (set_DH_params) returns (dh_gen_ans); // Возвращаем ответ на запрос установки параметров DH клиента
 }
 
 
