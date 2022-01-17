@@ -1,5 +1,6 @@
 import sys
 import threading
+from urllib import request
 from google.protobuf import message
 from bitarray import util
 
@@ -36,6 +37,17 @@ def message_box(text, title, icon, buttons):
         retrn_value = message_wgt.exec_()
         return retrn_value
 
+class MsgToServer():
+    """
+    Структура для формирования сообщения на сервер
+    """
+
+class MsgE2E():
+    """
+    Структура для формирования сообщения по сквозному шифрованию
+    """
+    
+
 class ClientData():
     """
     Структура для хранения данных пользователя в одном месте
@@ -46,6 +58,7 @@ class ClientData():
         self.key_1 = ""
         self.key_2 = ""
         self.isRegistered = False #Если пользователь залогинился, тогда ставим True
+        self.isRegisteredRemote = False
         self.nonce128 = ""
         self.nonce256 = ""
         self.pq = ""
@@ -56,6 +69,10 @@ class ClientData():
         self.dh_g = ""
         self.dh_pub_key = ""
         self.dh_priv_key = ""
+        self.auth_key = ""
+        self.auth_key_hash = ""
+        self.chats = {}
+        self.tgt_user = ""
 
         
 
@@ -131,6 +148,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.btn_gen_128_bits.clicked.connect(self.gen_128_bits)
         self.ui.btn_gen_256_bits.clicked.connect(self.gen_256_bits)
         self.ui.actionRegister.triggered.connect(self.request_pq)
+        self.ui.btn_start_chat.clicked.connect(self.accept_tgt_username)
     
 
         # # create a gRPC channel + stub
@@ -139,6 +157,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # create new listening thread for when new message streams come in
         threading.Thread(target=self.__listen_for_messages, daemon=True).start()
         
+    def accept_tgt_username(self):
+
+        tgt_username = self.ui.line_edit_chat_tgt.text()
+
+        self.client_data.tgt_user = tgt_username
 
     def onActionLoginClicked(self):
         """
@@ -246,7 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Функция отвечает за формирование ключей DH клиента
         """
         # Расчитываем параметры DH 
-        pn = dh.DHParameterNumbers(int(self.client_data.dh_p), int(self.client_data.dh_g))
+        pn = dh.DHParameterNumbers(int(self.client_data.dh_p[2:],16), int(self.client_data.dh_g[2:],16))
         parameters_dh = pn.parameters()
 
          # Расчитываем ключи для сервера
@@ -258,7 +281,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.client_data.dh_priv_key = client_dh_priv_key
         self.client_data.dh_pub_key = client_dh_pub_key
 
-        return client_dh_priv_key, client_dh_pub_key
+        self.log_event("Ключи DH клиента успешно созданы")
+
+        # Устанавливаем ключи клиента в UI
+        self.ui.line_edit_dh_priv_key.setText(str(client_dh_priv_key))
+        self.ui.line_edit_dh_pub_ley.setText(str(client_dh_pub_key))
+
+    def chek_set_DH_answer(self, answ_hash):
+
+        ans_1_hash = util.hex2ba(sha_one_process(self.client_data.nonce256 + "00000001" + util.hex2ba(self.client_data.auth_key_hash).to01()[96:])).to01()
+
+        ans_2_hash = util.hex2ba(sha_one_process(self.client_data.nonce256 + "00000011" + util.hex2ba(self.client_data.auth_key_hash).to01()[96:])).to01()
+
+        if ans_1_hash == answ_hash:
+            return True
+
+        elif ans_2_hash == answ_hash:
+            return False
 
     def kdf(self, server_nonce, nonce_new):
         """
@@ -278,6 +317,50 @@ class MainWindow(QtWidgets.QMainWindow):
         tmp_gost_iv = util.hex2ba(sha_nonces_2[24:41]).to01() + util.hex2ba(sha_nonces_3).to01() + nonce_new[:32]
 
         return tmp_gost_key, tmp_gost_iv
+
+    def decrypt_msg(self, encrypted_data, key, iv):
+
+        data_to_decrypt = gost.from_hex(encrypted_data)
+
+        prepared_keys = [key[x:x + 32] for x in range(0, len(key), 32)]
+
+        decrypted_data = gost.mode_OFB(data_to_decrypt, prepared_keys, iv[:64], None, reverse=True)
+
+        decrypted_data = gost.to_str(decrypted_data).split("\n")
+        
+        return decrypted_data
+
+    def encrypt_msg(self, data_to_encrypt, key, iv):
+        
+        prepared_keys = [key[x:x + 32] for x in range(0, len(key), 32)]
+
+        print(data_to_encrypt)
+        print(prepared_keys)
+
+        print(iv[:64], len(iv[:64]))
+
+        try:
+            encrypted_data = gost.mode_OFB(data_to_encrypt, prepared_keys, iv[:64], None)
+        except Exception as e:
+            print(e)
+            return chat.Empty()
+
+        return gost.to_hex(encrypted_data)
+
+
+    def kdf_2(self, auth_key_bits: str, msg_key_bits: str):
+        """
+        Функция формирования ключа
+        """
+        part_1 = util.hex2ba(msg_key_bits+auth_key_bits[:256]).to01()
+        part_2 = util.hex2ba(auth_key_bits[256:384] + msg_key_bits + auth_key_bits[384:512]).to01()
+        part_3 = util.hex2ba(auth_key_bits[512:768] + msg_key_bits).to01()
+        part_4 = util.hex2ba(msg_key_bits+auth_key_bits[768:1024]).to01()
+
+        key = part_1[:64] + part_2[64:] + part_3[32:128]
+        iv = part_1[64:] + part_2[:64] + part_3[128:] + part_4[:64]
+
+        return key, iv
 
     def __listen_for_messages(self):
         """
@@ -299,13 +382,38 @@ class MainWindow(QtWidgets.QMainWindow):
                     QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
             return None
 
+        if self.client_data.isRegisteredRemote == False:
+            message_box("Регистрация клиента удаленно не пройдена!", "Error!",
+                    QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+            return None
+
         message = self.ui.text_input_msg.toPlainText()
 
+
         if message != '':
-            n = chat.Note()  # create protobug message (called Note)
-            n.name = self.client_data.username  # set the username
-            n.message = message  # set the actual message of the note
-            print("S[{}] {}".format(n.name, n.message))  # debugging statement
+            note = chat.Note()
+
+            note.auth_key_id = self.client_data.auth_key_hash[:64]
+
+
+            data = self.client_data.username
+            data += "\n" + self.client_data.tgt_user
+            data += "\n" + message
+
+            msg_key = util.hex2ba(sha_one_process(data)).to01()
+
+            tmp_key, tmp_iv = self.kdf_2(self.client_data.auth_key, msg_key)
+
+            note.msg_key = msg_key
+            # Формируем зашифрованное сообщение
+            note.encrypted_data = self.encrypt_msg(data, tmp_key, tmp_iv)
+
+
+        
+            # n = chat.Note()  # create protobug message (called Note)
+            # n.name = self.client_data.username  # set the username
+            # n.message = message  # set the actual message of the note
+            # print("S[{}] {}".format(n.name, n.message))  # debugging statement
             try:
                 self.conn.SendNote(n)  # send the Note to the server
             except Exception:
@@ -466,9 +574,99 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.server_data.last_msg_time = float(decrypted_data[6])
 
+        self.set_client_dh()
+
+    def set_client_dh(self):
+
+        # Здесь, генерируем ключи клиента
+        self.gen_client_dh_keys()
+
+        # Вычисляем auth_key
+
+        print(type(self.server_data.dh_pub_key), self.server_data.dh_pub_key)
+        print(type(self.client_data.dh_priv_key), self.client_data.dh_priv_key)
+        print(type(self.client_data.dh_p), self.client_data.dh_p)
+
+        auth_key = bin(pow(int(self.server_data.dh_pub_key), self.client_data.dh_priv_key, int(self.client_data.dh_p[2:], 16)))[2:]
+        auth_key_hash = sha_one_process(auth_key)
+
+
+        # Сохраняем aut_key  в контексте клиента
+        self.client_data.auth_key = auth_key
+        self.client_data.auth_key_hash = auth_key_hash
+
+        # Формируем запрос
+        request = chat.set_DH_params()
+
+        request.nonce = self.client_data.nonce128
+        request.server_nonce = self.server_data.server_nonce
+
+        # Формируем данные для шифрования
+        data_request = self.client_data.nonce128
+        data_request += "\n" + self.server_data.server_nonce
+        data_request += "\n" + "0" #retry_id
+        data_request += "\n" + str(self.client_data.dh_pub_key)
+
+        print(f"data_request = {data_request}")
+
+        data_with_hash = sha_one_process(data_request) + "\n" + data_request
+
+        tmp_gost_key, tmp_gost_iv = self.kdf(self.server_data.server_nonce, self.client_data.nonce256)
+
+        data_to_encrypt = data_with_hash + "\n" + tmp_gost_key + "\n" + tmp_gost_iv
+
+        prepared_keys = [tmp_gost_key[x:x + 32] for x in range(0, len(tmp_gost_key), 32)]
+
+        # print(data_to_encrypt)
+        # print(prepared_keys)
+
+        # print(tmp_gost_iv[:64], len(tmp_gost_iv[:64]))
+
+        try:
+            encrypted_data = gost.mode_OFB(data_to_encrypt, prepared_keys, tmp_gost_iv[:64], None)
+        except Exception as e:
+            print(e)
+            self.log_event("Процесс установки ключей DH клиента нарушен. \nПовторите попытку")
         
+        request.encrypted_data = gost.to_hex(encrypted_data)
+
+        try:
+            response = self.conn.SetClientDH(request)
+        except Exception as e:
+            print(e)
+            message_box("Запрос установки ключей DH клиента неудачен", "Error!",
+                QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+            return None
 
 
+        print(response)
+
+        # Проверка сессии
+
+        if response.nonce == self.client_data.nonce128 and response.server_nonce == self.server_data.server_nonce:
+            print("Ответ на запрос по установке ключа DH получен")
+            self.log_event("Ответ на запрос по установке ключа DH получен")
+        else:
+            print("Ответ на запрос по установке ключа DH не верифицирован")
+            self.log_event("Ответ на запрос по установке ключа DH не верифицирован. Неверные nonce от сервера")
+
+        isSessionComplete = self.chek_set_DH_answer(response.new_nonce_hash_type)
+
+        if isSessionComplete:
+            self.log_event("Сессия с сервером установлена!")
+            message_box("Регистрация пройдена, сессия установлена!", "Error!",
+                        QtWidgets.QMessageBox.Information,
+                        QtWidgets.QMessageBox.Ok)
+            return False
+        else:
+            self.log_event("Сервер ответил ошибкой на запрос установки сессии. Повторите регистрацию пользователя.")
+            message_box("Сервер ответил ошибкой на запрос установки сессии. Повторите регистрацию пользователя.", "Error!",
+                        QtWidgets.QMessageBox.Critical,
+                        QtWidgets.QMessageBox.Ok)
+            return False
+
+        # Устанавливаем флаг что прошли регистрацию
+        self.client_data.isRegisteredRemote = True
 
 class RegistrationForm(QtWidgets.QDialog):
     """

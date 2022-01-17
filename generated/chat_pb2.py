@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x14generated/chat.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"%\n\x04Note\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x17\n\x06req_pq\x12\r\n\x05nonce\x18\x01 \x01(\t\"V\n\x06res_pq\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\n\n\x02pq\x18\x03 \x01(\t\x12\x1b\n\x13pub_key_fingerprint\x18\x04 \x01(\t\"\x82\x01\n\rreq_DH_params\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\t\n\x01p\x18\x03 \x01(\t\x12\t\n\x01q\x18\x04 \x01(\t\x12\x1e\n\x16public_key_fingerprint\x18\x05 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x06 \x01(\t\"L\n\rres_DH_params\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x03 \x01(\t\"L\n\rset_DH_params\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x03 \x01(\t\"N\n\ndh_gen_ans\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x1b\n\x13new_nonce_hash_type\x18\x03 \x01(\t\"C\n\x05\x45rror\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x15\n\rerror_message\x18\x03 \x01(\t2\xf0\x01\n\nChatServer\x12\'\n\nChatStream\x12\x0b.grpc.Empty\x1a\n.grpc.Note0\x01\x12#\n\x08SendNote\x12\n.grpc.Note\x1a\x0b.grpc.Empty\x12\'\n\tRequestPQ\x12\x0c.grpc.req_pq\x1a\x0c.grpc.res_pq\x12\x35\n\tRequestDH\x12\x13.grpc.req_DH_params\x1a\x13.grpc.res_DH_params\x12\x34\n\x0bSetClientDH\x12\x13.grpc.set_DH_params\x1a\x10.grpc.dh_gen_ansb\x06proto3'
+  serialized_pb=b'\n\x14generated/chat.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"D\n\x04Note\x12\x13\n\x0b\x61uth_key_id\x18\x01 \x01(\t\x12\x0f\n\x07msg_key\x18\x02 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x03 \x01(\t\"\x17\n\x06req_pq\x12\r\n\x05nonce\x18\x01 \x01(\t\"V\n\x06res_pq\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\n\n\x02pq\x18\x03 \x01(\t\x12\x1b\n\x13pub_key_fingerprint\x18\x04 \x01(\t\"\x82\x01\n\rreq_DH_params\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\t\n\x01p\x18\x03 \x01(\t\x12\t\n\x01q\x18\x04 \x01(\t\x12\x1e\n\x16public_key_fingerprint\x18\x05 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x06 \x01(\t\"L\n\rres_DH_params\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x03 \x01(\t\"L\n\rset_DH_params\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x03 \x01(\t\"N\n\ndh_gen_ans\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x1b\n\x13new_nonce_hash_type\x18\x03 \x01(\t\"Q\n\x11msg_client_server\x12\x13\n\x0b\x61uth_key_id\x18\x01 \x01(\t\x12\x0f\n\x07msg_key\x18\x02 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x03 \x01(\t\"K\n\x07msg_e2e\x12\x17\n\x0fkey_fingerprint\x18\x01 \x01(\t\x12\x0f\n\x07msg_key\x18\x02 \x01(\t\x12\x16\n\x0e\x65ncrypted_data\x18\x03 \x01(\t\"C\n\x05\x45rror\x12\r\n\x05nonce\x18\x01 \x01(\t\x12\x14\n\x0cserver_nonce\x18\x02 \x01(\t\x12\x15\n\rerror_message\x18\x03 \x01(\t2\xe7\x02\n\nChatServer\x12\'\n\nChatStream\x12\x0b.grpc.Empty\x1a\n.grpc.Note0\x01\x12#\n\x08SendNote\x12\n.grpc.Note\x1a\x0b.grpc.Empty\x12\'\n\tRequestPQ\x12\x0c.grpc.req_pq\x1a\x0c.grpc.res_pq\x12\x35\n\tRequestDH\x12\x13.grpc.req_DH_params\x1a\x13.grpc.res_DH_params\x12\x34\n\x0bSetClientDH\x12\x13.grpc.set_DH_params\x1a\x10.grpc.dh_gen_ans\x12G\n\x13SendMessageToServer\x12\x17.grpc.msg_client_server\x1a\x17.grpc.msg_client_server\x12,\n\x0eSendMessageE2E\x12\r.grpc.msg_e2e\x1a\x0b.grpc.Emptyb\x06proto3'
 )
 
 
@@ -59,15 +59,22 @@ _NOTE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='grpc.Note.name', index=0,
+      name='auth_key_id', full_name='grpc.Note.auth_key_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='message', full_name='grpc.Note.message', index=1,
+      name='msg_key', full_name='grpc.Note.msg_key', index=1,
       number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='encrypted_data', full_name='grpc.Note.encrypted_data', index=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -85,7 +92,7 @@ _NOTE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=39,
-  serialized_end=76,
+  serialized_end=107,
 )
 
 
@@ -116,8 +123,8 @@ _REQ_PQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=78,
-  serialized_end=101,
+  serialized_start=109,
+  serialized_end=132,
 )
 
 
@@ -169,8 +176,8 @@ _RES_PQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=103,
-  serialized_end=189,
+  serialized_start=134,
+  serialized_end=220,
 )
 
 
@@ -236,8 +243,8 @@ _REQ_DH_PARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=192,
-  serialized_end=322,
+  serialized_start=223,
+  serialized_end=353,
 )
 
 
@@ -282,8 +289,8 @@ _RES_DH_PARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=324,
-  serialized_end=400,
+  serialized_start=355,
+  serialized_end=431,
 )
 
 
@@ -328,8 +335,8 @@ _SET_DH_PARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=402,
-  serialized_end=478,
+  serialized_start=433,
+  serialized_end=509,
 )
 
 
@@ -374,8 +381,100 @@ _DH_GEN_ANS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=480,
-  serialized_end=558,
+  serialized_start=511,
+  serialized_end=589,
+)
+
+
+_MSG_CLIENT_SERVER = _descriptor.Descriptor(
+  name='msg_client_server',
+  full_name='grpc.msg_client_server',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='auth_key_id', full_name='grpc.msg_client_server.auth_key_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='msg_key', full_name='grpc.msg_client_server.msg_key', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='encrypted_data', full_name='grpc.msg_client_server.encrypted_data', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=591,
+  serialized_end=672,
+)
+
+
+_MSG_E2E = _descriptor.Descriptor(
+  name='msg_e2e',
+  full_name='grpc.msg_e2e',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key_fingerprint', full_name='grpc.msg_e2e.key_fingerprint', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='msg_key', full_name='grpc.msg_e2e.msg_key', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='encrypted_data', full_name='grpc.msg_e2e.encrypted_data', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=674,
+  serialized_end=749,
 )
 
 
@@ -420,8 +519,8 @@ _ERROR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=560,
-  serialized_end=627,
+  serialized_start=751,
+  serialized_end=818,
 )
 
 DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
@@ -432,6 +531,8 @@ DESCRIPTOR.message_types_by_name['req_DH_params'] = _REQ_DH_PARAMS
 DESCRIPTOR.message_types_by_name['res_DH_params'] = _RES_DH_PARAMS
 DESCRIPTOR.message_types_by_name['set_DH_params'] = _SET_DH_PARAMS
 DESCRIPTOR.message_types_by_name['dh_gen_ans'] = _DH_GEN_ANS
+DESCRIPTOR.message_types_by_name['msg_client_server'] = _MSG_CLIENT_SERVER
+DESCRIPTOR.message_types_by_name['msg_e2e'] = _MSG_E2E
 DESCRIPTOR.message_types_by_name['Error'] = _ERROR
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -491,6 +592,20 @@ dh_gen_ans = _reflection.GeneratedProtocolMessageType('dh_gen_ans', (_message.Me
   })
 _sym_db.RegisterMessage(dh_gen_ans)
 
+msg_client_server = _reflection.GeneratedProtocolMessageType('msg_client_server', (_message.Message,), {
+  'DESCRIPTOR' : _MSG_CLIENT_SERVER,
+  '__module__' : 'generated.chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.msg_client_server)
+  })
+_sym_db.RegisterMessage(msg_client_server)
+
+msg_e2e = _reflection.GeneratedProtocolMessageType('msg_e2e', (_message.Message,), {
+  'DESCRIPTOR' : _MSG_E2E,
+  '__module__' : 'generated.chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.msg_e2e)
+  })
+_sym_db.RegisterMessage(msg_e2e)
+
 Error = _reflection.GeneratedProtocolMessageType('Error', (_message.Message,), {
   'DESCRIPTOR' : _ERROR,
   '__module__' : 'generated.chat_pb2'
@@ -507,8 +622,8 @@ _CHATSERVER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=630,
-  serialized_end=870,
+  serialized_start=821,
+  serialized_end=1180,
   methods=[
   _descriptor.MethodDescriptor(
     name='ChatStream',
@@ -557,6 +672,26 @@ _CHATSERVER = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_SET_DH_PARAMS,
     output_type=_DH_GEN_ANS,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SendMessageToServer',
+    full_name='grpc.ChatServer.SendMessageToServer',
+    index=5,
+    containing_service=None,
+    input_type=_MSG_CLIENT_SERVER,
+    output_type=_MSG_CLIENT_SERVER,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SendMessageE2E',
+    full_name='grpc.ChatServer.SendMessageE2E',
+    index=6,
+    containing_service=None,
+    input_type=_MSG_E2E,
+    output_type=_EMPTY,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

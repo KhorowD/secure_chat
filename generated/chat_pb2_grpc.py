@@ -39,6 +39,16 @@ class ChatServerStub(object):
                 request_serializer=generated_dot_chat__pb2.set_DH_params.SerializeToString,
                 response_deserializer=generated_dot_chat__pb2.dh_gen_ans.FromString,
                 )
+        self.SendMessageToServer = channel.unary_unary(
+                '/grpc.ChatServer/SendMessageToServer',
+                request_serializer=generated_dot_chat__pb2.msg_client_server.SerializeToString,
+                response_deserializer=generated_dot_chat__pb2.msg_client_server.FromString,
+                )
+        self.SendMessageE2E = channel.unary_unary(
+                '/grpc.ChatServer/SendMessageE2E',
+                request_serializer=generated_dot_chat__pb2.msg_e2e.SerializeToString,
+                response_deserializer=generated_dot_chat__pb2.Empty.FromString,
+                )
 
 
 class ChatServerServicer(object):
@@ -78,6 +88,20 @@ class ChatServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SendMessageToServer(self, request, context):
+        """Комуникация между клиентом и сервером
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SendMessageE2E(self, request, context):
+        """Коммуникация между клиентами по E2E
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChatServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -105,6 +129,16 @@ def add_ChatServerServicer_to_server(servicer, server):
                     servicer.SetClientDH,
                     request_deserializer=generated_dot_chat__pb2.set_DH_params.FromString,
                     response_serializer=generated_dot_chat__pb2.dh_gen_ans.SerializeToString,
+            ),
+            'SendMessageToServer': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendMessageToServer,
+                    request_deserializer=generated_dot_chat__pb2.msg_client_server.FromString,
+                    response_serializer=generated_dot_chat__pb2.msg_client_server.SerializeToString,
+            ),
+            'SendMessageE2E': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendMessageE2E,
+                    request_deserializer=generated_dot_chat__pb2.msg_e2e.FromString,
+                    response_serializer=generated_dot_chat__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -198,5 +232,39 @@ class ChatServer(object):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatServer/SetClientDH',
             generated_dot_chat__pb2.set_DH_params.SerializeToString,
             generated_dot_chat__pb2.dh_gen_ans.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SendMessageToServer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatServer/SendMessageToServer',
+            generated_dot_chat__pb2.msg_client_server.SerializeToString,
+            generated_dot_chat__pb2.msg_client_server.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SendMessageE2E(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatServer/SendMessageE2E',
+            generated_dot_chat__pb2.msg_e2e.SerializeToString,
+            generated_dot_chat__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

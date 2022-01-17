@@ -93,9 +93,9 @@ def delete_padding(data):
     # print("     last_byte:", last_byte)
     if last_byte in [1, 2, 3, 4, 5, 6, 7]:
         null_bytes = data[len(data) - last_byte:len(data) - 1]
-        print(null_bytes)
+        # print(null_bytes)
         pattern = [0 for x in range(last_byte - 1)]
-        print(pattern)
+        # print(pattern)
         if null_bytes == pattern:
             return data[:len(data) - last_byte]
 
@@ -188,7 +188,7 @@ def de_prepare_data(data, N):
     else:
         data = [data]
 
-    print(data)
+    # print(data)
 
     if data[-1] == "":
         del data[-1]

@@ -23,3 +23,10 @@ py -m grpc_tools.protoc -I.  generated/chat.proto --python_out=. --grpc_python_o
 
 Ключ RSA = 300 bit
 
+Протокол:
+
+    Соль
+
+    Тип сообщения
+
+    Поля в зависимости от типа сообщения

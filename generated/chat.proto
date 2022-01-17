@@ -6,8 +6,9 @@ message Empty {}
 
 // I called it Note because message Message sounds complicated
 message Note {
-    string name = 1;
-    string message = 2;
+    string auth_key_id = 1;
+    string msg_key = 2;
+    string encrypted_data = 3;
 }
 
 message req_pq {
@@ -48,6 +49,17 @@ message dh_gen_ans {
     string new_nonce_hash_type = 3;
 }
 
+message msg_client_server {
+    string auth_key_id = 1;
+    string msg_key = 2;
+    string encrypted_data = 3;
+}
+
+message msg_e2e {
+    string key_fingerprint = 1;
+    string msg_key = 2;
+    string encrypted_data = 3;
+}
 
 message Error {
     string nonce = 1;
@@ -62,6 +74,8 @@ service ChatServer {
     rpc RequestPQ (req_pq) returns (res_pq); //Возвращает аутентификационную информацию со стороны сервера
     rpc RequestDH (req_DH_params) returns (res_DH_params); // Возвращаем ответ на запрос параметров DH
     rpc SetClientDH (set_DH_params) returns (dh_gen_ans); // Возвращаем ответ на запрос установки параметров DH клиента
+    rpc SendMessageToServer (msg_client_server) returns (msg_client_server); // Комуникация между клиентом и сервером
+    rpc SendMessageE2E (msg_e2e) returns (Empty); // Коммуникация между клиентами по E2E
 }
 
 
