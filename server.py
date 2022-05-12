@@ -355,12 +355,18 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
                 lastindex += 1
                 yield n
 
-    def SendNote(self, request: chat.Note, context):
+    def SendNote(self, new_note: chat.enc_note, context):
         """
         This method is called when a clients sends a Note to the server.
         :param request:
         :param context:
         :return:
+
+        Метод вызываемый, когда пользователь хочет отправить сообщение 
+
+        Получает зашифрованное на ключах сервера сообщение (chat.enc_note) от src_usr_name
+
+        Полученное сообщение дешифруется и формируется структура note
         """
         # # this is only for the server console
         # print("[{}] {}".format(request.name, request.message))
@@ -374,15 +380,25 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         current_client : ClientContext = None
 
         for client in self.clients:
-            if client.auth_key_hash[:64] == request.auth_key_id:
+            if client.auth_key_hash[:64] == new_note.auth_key_id:
                 current_client = client
 
         # После определения контекста вызываем kdf_2(c_auth_key, msg_key)
-        tmp_key, tmp_iv = self.kdf_2(current_client.auth_key, request.msg_key)
+        tmp_key, tmp_iv = self.kdf_2(current_client.auth_key, new_note.msg_key)
 
         # расшифруем с ГОСТ
 
-        decrypted_data = self.decrypt_msg(request.ecnrypted_data, tmp_key, tmp_iv)
+        decrypted_data = self.decrypt_msg(new_note.ecnrypted_data, tmp_key, tmp_iv)
+
+        # формируем итоговое сообщение
+
+        note = chat.note() 
+
+        note.src_usr_name = decrypted_data[0]
+        note.tgt_usr_name = decrypted_data[1]
+        note.msg = decrypted_data[2]
+
+        self.chats.append(note)
 
         return chat.Empty()  # something needs to be returned required by protobuf language, we just return empty msg
 
@@ -662,7 +678,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
     def SendMessageToServer(self, request: chat.msg_client_server, context):
         """
-        Здесь реализовано взавимодействие клиентов и сервера после установки сессии
+        Здесь реализовано взаимодействие клиентов и сервера после установки сессии
         """
 
         # Сначала расшифруем сообщение
@@ -680,7 +696,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
         # расшифруем с ГОСТ
 
-        decrypted_data = self.decrypt_msg(request.ecnrypted_data, tmp_key, tmp_iv)
+        decrypted_data = self.decrypt_msg(request.encrypted_data, tmp_key, tmp_iv)
 
         # После расшифровки Определеям тип сообщения (msg_type: str_int number)
 
@@ -749,7 +765,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
                 data += "\n" + "0" 
 
             else:
-                # В случае если есть завпрос отправляем данные второму клиенту
+                # В случае если есть запрос отправляем данные второму клиенту
                 data = gen_IV(64)
                 data += "\n" + "REQUESTS"
                 data += "\n" + current_client.e2e_requests[-1][0] #Установка имени пользователя, запросившего секретный чат

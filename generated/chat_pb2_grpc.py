@@ -6,7 +6,13 @@ from generated import chat_pb2 as generated_dot_chat__pb2
 
 
 class ChatServerStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """message msqg_c2c {
+    string auth_key_id = 1;
+    string msg_key = 2;
+    string encrypted_data = 3;
+    }
+
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -17,11 +23,11 @@ class ChatServerStub(object):
         self.ChatStream = channel.unary_stream(
                 '/grpc.ChatServer/ChatStream',
                 request_serializer=generated_dot_chat__pb2.Empty.SerializeToString,
-                response_deserializer=generated_dot_chat__pb2.Note.FromString,
+                response_deserializer=generated_dot_chat__pb2.enc_note.FromString,
                 )
         self.SendNote = channel.unary_unary(
                 '/grpc.ChatServer/SendNote',
-                request_serializer=generated_dot_chat__pb2.Note.SerializeToString,
+                request_serializer=generated_dot_chat__pb2.enc_note.SerializeToString,
                 response_deserializer=generated_dot_chat__pb2.Empty.FromString,
                 )
         self.RequestPQ = channel.unary_unary(
@@ -52,7 +58,13 @@ class ChatServerStub(object):
 
 
 class ChatServerServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """message msqg_c2c {
+    string auth_key_id = 1;
+    string msg_key = 2;
+    string encrypted_data = 3;
+    }
+
+    """
 
     def ChatStream(self, request, context):
         """This bi-directional stream makes it possible to send and receive Notes between 2 persons
@@ -108,11 +120,11 @@ def add_ChatServerServicer_to_server(servicer, server):
             'ChatStream': grpc.unary_stream_rpc_method_handler(
                     servicer.ChatStream,
                     request_deserializer=generated_dot_chat__pb2.Empty.FromString,
-                    response_serializer=generated_dot_chat__pb2.Note.SerializeToString,
+                    response_serializer=generated_dot_chat__pb2.enc_note.SerializeToString,
             ),
             'SendNote': grpc.unary_unary_rpc_method_handler(
                     servicer.SendNote,
-                    request_deserializer=generated_dot_chat__pb2.Note.FromString,
+                    request_deserializer=generated_dot_chat__pb2.enc_note.FromString,
                     response_serializer=generated_dot_chat__pb2.Empty.SerializeToString,
             ),
             'RequestPQ': grpc.unary_unary_rpc_method_handler(
@@ -148,7 +160,13 @@ def add_ChatServerServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class ChatServer(object):
-    """Missing associated documentation comment in .proto file."""
+    """message msqg_c2c {
+    string auth_key_id = 1;
+    string msg_key = 2;
+    string encrypted_data = 3;
+    }
+
+    """
 
     @staticmethod
     def ChatStream(request,
@@ -163,7 +181,7 @@ class ChatServer(object):
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/grpc.ChatServer/ChatStream',
             generated_dot_chat__pb2.Empty.SerializeToString,
-            generated_dot_chat__pb2.Note.FromString,
+            generated_dot_chat__pb2.enc_note.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -179,7 +197,7 @@ class ChatServer(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatServer/SendNote',
-            generated_dot_chat__pb2.Note.SerializeToString,
+            generated_dot_chat__pb2.enc_note.SerializeToString,
             generated_dot_chat__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

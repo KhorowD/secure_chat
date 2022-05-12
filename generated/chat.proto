@@ -5,7 +5,14 @@ package grpc;
 message Empty {}
 
 // I called it Note because message Message sounds complicated
-message Note {
+// note is enc_note message field encrypted_data 
+message note {
+    string src_usr_name = 1;
+    string dst_usr_name = 2;
+    string msg = 3;
+}
+
+message enc_note {
     string auth_key_id = 1;
     string msg_key = 2;
     string encrypted_data = 3;
@@ -67,10 +74,16 @@ message Error {
     string error_message = 3;
 }
 
+// message msqg_c2c {
+//     string auth_key_id = 1;
+//     string msg_key = 2;
+//     string encrypted_data = 3;
+// }
+
 service ChatServer {
     // This bi-directional stream makes it possible to send and receive Notes between 2 persons
-    rpc ChatStream (Empty) returns (stream Note);
-    rpc SendNote (Note) returns (Empty);
+    rpc ChatStream (Empty) returns (stream enc_note);
+    rpc SendNote (enc_note) returns (Empty);
     rpc RequestPQ (req_pq) returns (res_pq); //Возвращает аутентификационную информацию со стороны сервера
     rpc RequestDH (req_DH_params) returns (res_DH_params); // Возвращаем ответ на запрос параметров DH
     rpc SetClientDH (set_DH_params) returns (dh_gen_ans); // Возвращаем ответ на запрос установки параметров DH клиента

@@ -3,6 +3,7 @@ import threading
 from urllib import request
 from google.protobuf import message
 from bitarray import util
+from yaml.loader import SafeLoader
 
 
 import grpc
@@ -41,11 +42,20 @@ class MsgToServer():
     """
     Структура для формирования сообщения на сервер
     """
+    def __init__(self) -> None:
+        self.auth_key_id = ""
+        self.msg_type = ""
+        self.msg_key = ""
+        self.encrypted_data = ""
 
 class MsgE2E():
     """
     Структура для формирования сообщения по сквозному шифрованию
     """
+    def __init__(self) -> None:
+        self.key_fingerprint = ""
+        self.msg_key = ""
+        self.encrypted_data = ""
     
 
 class ClientData():
@@ -58,7 +68,7 @@ class ClientData():
         self.key_1 = ""
         self.key_2 = ""
         self.isRegistered = False #Если пользователь залогинился, тогда ставим True
-        self.isRegisteredRemote = False
+        self.isRegisteredRemote = False #Если пользователь прошел регистрацию устройства, ставим True
         self.nonce128 = ""
         self.nonce256 = ""
         self.pq = ""
@@ -367,9 +377,9 @@ class MainWindow(QtWidgets.QMainWindow):
         Метод запускаемый в отдельном потоке от ui для того чтобы принимать сообщения и выводить их в поле чата
         """
         for note in self.conn.ChatStream(chat.Empty()):  # this line will wait for new messages from the server!
-            print("R[{}] {}".format(note.name, note.message))  # debugging statement
+            print("R[{}] {}".format(note.src_usr_name, note.msg))  # debugging statement
             # self.chat_list.insert(END, "[{}] {}\n".format(note.name, note.message))  # add the message to the UI
-            self.ui.chat_field_msg.append("[{}] {}\n".format(note.name, note.message))
+            self.ui.chat_field_msg.append("[{}] {}\n".format(note.src_usr_name, note.msg))
 
     def send_message(self, event):
         """
@@ -391,10 +401,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         if message != '':
-            note = chat.Note()
+            note = chat.enc_note() # Создаем объект класса сообщение
 
             note.auth_key_id = self.client_data.auth_key_hash[:64]
-
 
             data = self.client_data.username
             data += "\n" + self.client_data.tgt_user
@@ -415,10 +424,11 @@ class MainWindow(QtWidgets.QMainWindow):
             # n.message = message  # set the actual message of the note
             # print("S[{}] {}".format(n.name, n.message))  # debugging statement
             try:
-                self.conn.SendNote(n)  # send the Note to the server
-            except Exception:
+                self.conn.SendNote(note)  # send the Note to the server
+            except Exception as e:
                 message_box("Проблема при отправке сообщения!", "Error!",
                     QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
+                print(e)
                 return None
 
     def request_pq(self):
@@ -657,16 +667,19 @@ class MainWindow(QtWidgets.QMainWindow):
             message_box("Регистрация пройдена, сессия установлена!", "Error!",
                         QtWidgets.QMessageBox.Information,
                         QtWidgets.QMessageBox.Ok)
+            # Устанавливаем флаг что прошли регистрацию
+            self.client_data.isRegisteredRemote = True
             return False
         else:
             self.log_event("Сервер ответил ошибкой на запрос установки сессии. Повторите регистрацию пользователя.")
             message_box("Сервер ответил ошибкой на запрос установки сессии. Повторите регистрацию пользователя.", "Error!",
                         QtWidgets.QMessageBox.Critical,
                         QtWidgets.QMessageBox.Ok)
+            # Устанавливаем флаг что прошли регистрацию
+            self.client_data.isRegisteredRemote = False
             return False
 
-        # Устанавливаем флаг что прошли регистрацию
-        self.client_data.isRegisteredRemote = True
+        
 
 class RegistrationForm(QtWidgets.QDialog):
     """
