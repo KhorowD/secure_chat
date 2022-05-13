@@ -1,4 +1,4 @@
-import server_ui as ui
+import ui.server_ui as ui
 from 
 import asyncio
 from asyncqt import QEventLoop

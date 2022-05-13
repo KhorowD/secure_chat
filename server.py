@@ -1,29 +1,27 @@
-from ast import arg
-from calendar import day_abbr
 from concurrent import futures
 import re
 from urllib import response
 
-import server_ui as ui
+import ui.server_ui as ui
 
 import grpc
 import time
 import sys
 import threading
-import pprint
 from random import randint
 from bitarray import util
 
 import generated.chat_pb2 as chat
 import generated.chat_pb2_grpc as rpc
 
-from gamma import gen_key as gen_IV
-from base_func import prime_gen_rm
-from sha_one import sha_one_process
-import gost
-import rsa
-import dh as diffie_hellman
+from modules.gamma import gen_key as gen_IV
+from modules.base_func import prime_gen_rm
+from modules.sha_one import sha_one_process
+import modules.gost as gost
+import modules.rsa as rsa
+import modules.dh as diffie_hellman
 from cryptography.hazmat.primitives.asymmetric import dh
+from modules.client_context import ClientContext
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -50,41 +48,41 @@ def message_box(text, title, icon, buttons):
         retrn_value = message_wgt.exec_()
         return retrn_value
 
-class ClientContext():
-    """
-    Структура содержащая информацию о подключаемых клиентах
-    """
-    def __init__(self) -> None:
-        self.username = ""
-        self.nonce = ""
-        self.nonce_new = ""
-        self.pq = ""
-        self.p = ""
-        self.q = ""
-        self.server_nonce = ""
-        self.server_rsa_priv_key = ""
-        self.server_rsa_n_value = ""
-        self.dh_pub_key = ""
-        self.dh_priv_key = ""
-        self.dh_g = ""
-        self.dh_p = ""
-        self.dh_server_pub_key = ""
-        self.dh_server_priv_key = ""
-        self.auth_key_hash = ""
-        self.auth_key = ""
-        self.chats = {}
-        self.e2e_requests = []
-        self.e2e_accepted_requests = {}
-        self.e2e_passed_parameters = {}
-        self.e2e_g = ""
-        self.e2e_p = ""
-        self.e2e_dh_pub_key = ""
+# class ClientContext():
+#     """
+#     Структура содержащая информацию о подключаемых клиентах
+#     """
+#     def __init__(self) -> None:
+#         self.username = ""
+#         self.nonce = ""
+#         self.nonce_new = ""
+#         self.pq = ""
+#         self.p = ""
+#         self.q = ""
+#         self.server_nonce = ""
+#         self.server_rsa_priv_key = ""
+#         self.server_rsa_n_value = ""
+#         self.dh_pub_key = ""
+#         self.dh_priv_key = ""
+#         self.dh_g = ""
+#         self.dh_p = ""
+#         self.dh_server_pub_key = ""
+#         self.dh_server_priv_key = ""
+#         self.auth_key_hash = ""
+#         self.auth_key = ""
+#         self.chats = {}
+#         self.e2e_requests = []
+#         self.e2e_accepted_requests = {}
+#         self.e2e_passed_parameters = {}
+#         self.e2e_g = ""
+#         self.e2e_p = ""
+#         self.e2e_dh_pub_key = ""
         
         
 
 
-    def __print__(self):
-        pprint.pprint(self.__dict__)
+#     def __print__(self):
+#         pprint.pprint(self.__dict__)
         
 
 class ServerData():

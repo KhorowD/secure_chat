@@ -11,16 +11,17 @@ import generated.chat_pb2 as chat
 import generated.chat_pb2_grpc as rpc
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import client_ui as ui
-from registration_dialog import Ui_RegisterForm
+import ui.client_ui as ui
+from ui.registration_dialog import Ui_RegisterForm
 
-from gamma import gen_key
-from pyecm import factors
-from sha_one import sha_one_process
-import rsa
-import gost
-import dh as diffie_hellman
+from modules.gamma import gen_key
+from modules.pyecm import factors
+from modules.sha_one import sha_one_process
+import modules.rsa as rsa
+import modules.gost as gost
+import modules.dh as diffie_hellman
 from cryptography.hazmat.primitives.asymmetric import dh
+from modules.client_context import ClientContext
 
 address = 'localhost'
 port = 8080

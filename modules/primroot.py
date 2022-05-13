@@ -1,4 +1,4 @@
-from pyecm import factors
+from .pyecm import factors
 from gmpy2 import is_prime, f_div, mpz, mpfr, is_odd
 
 

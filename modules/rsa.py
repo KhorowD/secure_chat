@@ -3,7 +3,7 @@ from random import randint
 from math import gcd, log2
 import numpy as np
 from io import IOBase
-from base_func import custom_pow
+from modules.base_func import custom_pow
 
 # saved_data = None
 

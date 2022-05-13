@@ -4,8 +4,8 @@ import re
 import time
 import secrets
 from random import randint, SystemRandom
-from primroot import primroot
-from base_func import prime_gen_rm, RM_test, custom_pow
+from .primroot import primroot
+from modules.base_func import prime_gen_rm, RM_test, custom_pow
 from gmpy2 import mpz, is_strong_prp
 
 
