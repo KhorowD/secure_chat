@@ -3,7 +3,8 @@ import threading
 from urllib import request
 from google.protobuf import message
 from bitarray import util
-from yaml.loader import SafeLoader
+from pprint import pprint
+import yaml
 
 
 import grpc
@@ -160,6 +161,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.btn_gen_256_bits.clicked.connect(self.gen_256_bits)
         self.ui.actionRegister.triggered.connect(self.request_pq)
         self.ui.btn_start_chat.clicked.connect(self.accept_tgt_username)
+        self.ui.actionSave_session_file.triggered.connect(self.save_session_to_file)
+        self.ui.actionUpload_Session.triggered.connect(self.read_session_from_file)
     
 
         # # create a gRPC channel + stub
@@ -296,7 +299,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Устанавливаем ключи клиента в UI
         self.ui.line_edit_dh_priv_key.setText(str(client_dh_priv_key))
-        self.ui.line_edit_dh_pub_ley.setText(str(client_dh_pub_key))
+        self.ui.line_edit_dh_pub_key.setText(str(client_dh_pub_key))
 
     def chek_set_DH_answer(self, answ_hash):
 
@@ -670,6 +673,12 @@ class MainWindow(QtWidgets.QMainWindow):
                         QtWidgets.QMessageBox.Ok)
             # Устанавливаем флаг что прошли регистрацию
             self.client_data.isRegisteredRemote = True
+
+
+            #Save user configuration 
+            # with open("user_config.txt", "w") as conf:
+            #     pprint(self.client_data.__dict__, conf)
+
             return False
         else:
             self.log_event("Сервер ответил ошибкой на запрос установки сессии. Повторите регистрацию пользователя.")
@@ -680,7 +689,76 @@ class MainWindow(QtWidgets.QMainWindow):
             self.client_data.isRegisteredRemote = False
             return False
 
+    def fill_user_ui_crypto_fields(self):
+        """
+        Заполняем ui поля данными клиента
+        """
+        self.ui.line_edit_128bits.setText(self.client_data.nonce128)
+        self.ui.line_edit_256bits.setText(self.client_data.nonce256)
+        self.ui.line_edit_dh_g.setText(self.client_data.dh_g)
+        self.ui.line_edit_dh_p.setText(self.client_data.dh_p)
+        self.ui.line_edit_dh_priv_key.setText(self.client_data.dh_priv_key)
+        self.ui.line_edit_dh_pub_key.setText(self.client_data.dh_pub_key)
+
+    def setup_session(self, session: dict):
+        """
+        Установка данных клиента из файла
+        """
+        self.client_data.auth_key = str(session["crypto"]["auth_key"])
+        self.client_data.auth_key_hash = str(session["crypto"]["auth_key_hash"])
+        self.client_data.nonce128 = str(session["crypto"]["nonce_128"])
+        self.client_data.nonce256 = str(session["crypto"]["nonce_256"])
         
+        self.client_data.dh_p = hex(session["crypto"]["dh"]["p"])
+        self.client_data.dh_g = hex(session["crypto"]["dh"]["g"])
+        self.client_data.dh_priv_key= str(session["crypto"]["dh"]["priv_key"])
+        self.client_data.dh_pub_key = str(session["crypto"]["dh"]["pub_key"])
+
+        self.client_data.username = session["user"]["name"]
+        self.client_data.password = session["user"]["pass_md5_hash"]
+        self.client_data.isRegistered = session["user"]["local_registration"]
+        self.client_data.isRegisteredRemote = session["user"]["remote_registration"]
+
+        self.client_data.p = session["pow"]["p"]
+        self.client_data.q = session["pow"]["q"]
+        self.client_data.pq = session["pow"]["pq"]
+
+        self.client_data.server_pub_key_fingerprint = session["server_data"]["pub_key_fingerprint"]
+
+        message_box("Сессия установлена успешно!", "OK!",
+                        QtWidgets.QMessageBox.Information,
+                        QtWidgets.QMessageBox.Ok)
+
+        pprint(self.client_data.__dict__)
+
+        self.fill_user_ui_crypto_fields()
+
+    def save_session_to_file(self):
+        with open("user_config.txt", "w") as conf:
+                pprint(self.client_data.__dict__, conf)
+
+    def read_session_from_file(self):
+
+        file_name = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Read text", "./", "YAML (*.yml)")
+        if not file_name[0]:
+            return None
+        try:
+            with open(file_name[0], "r") as file:
+                # config = yaml.load(file, Loader=SafeLoader).get("ping_script", {})
+                session = yaml.safe_load(file)
+                print(session)
+
+        except FileNotFoundError:
+            message_box("Файл не существует!", "Error!",
+                        QtWidgets.QMessageBox.Critical,
+                        QtWidgets.QMessageBox.Ok)
+            return None
+
+        try:
+            self.setup_session(session)
+        except Exception as e:
+            print(e)
 
 class RegistrationForm(QtWidgets.QDialog):
     """
