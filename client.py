@@ -1,6 +1,5 @@
 import sys
 import threading
-from urllib import request
 from google.protobuf import message
 from bitarray import util
 from pprint import pprint
@@ -60,31 +59,31 @@ class MsgE2E():
         self.encrypted_data = ""
     
 
-class ClientData():
-    """
-    Структура для хранения данных пользователя в одном месте
-    """
-    def __init__(self) -> None:
-        self.username = ""
-        self.password = ""
-        self.key_1 = ""
-        self.key_2 = ""
-        self.isRegistered = False #Если пользователь залогинился, тогда ставим True
-        self.isRegisteredRemote = False #Если пользователь прошел регистрацию устройства, ставим True
-        self.nonce128 = ""
-        self.nonce256 = ""
-        self.pq = ""
-        self.p = 0
-        self.q = 0
-        self.server_pub_key_fingerprint = ""
-        self.dh_p = ""
-        self.dh_g = ""
-        self.dh_pub_key = ""
-        self.dh_priv_key = ""
-        self.auth_key = ""
-        self.auth_key_hash = ""
-        self.chats = {}
-        self.tgt_user = ""
+# class ClientData():
+#     """
+#     Структура для хранения данных пользователя в одном месте
+#     """
+#     def __init__(self) -> None:
+#         self.username = ""
+#         self.password = ""
+#         self.key_1 = ""
+#         self.key_2 = ""
+#         self.isRegistered = False #Если пользователь залогинился, тогда ставим True
+#         self.isRegisteredRemote = False #Если пользователь прошел регистрацию устройства, ставим True
+#         self.nonce_128 = ""
+#         self.nonce_256 = ""
+#         self.pq = ""
+#         self.p = 0
+#         self.q = 0
+#         self.server_pub_key_fingerprint = ""
+#         self.dh_p = ""
+#         self.dh_g = ""
+#         self.dh_pub_key = ""
+#         self.dh_priv_key = ""
+#         self.auth_key = ""
+#         self.auth_key_hash = ""
+#         self.chats = {}
+#         self.tgt_user = ""
 
         
 
@@ -143,7 +142,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.client_data = ClientData()
+        # self.client_data = ClientData()
+        self.client_data = ClientContext()
         self.server_data = ServerData()
 
         isKeysLoaded = self.server_data.load_keys_from_file("./server_keys.txt")
@@ -238,9 +238,9 @@ class MainWindow(QtWidgets.QMainWindow):
             pq
             p
             q
-            c_nonce128
-            s_nonce128
-            c_new_nonce256
+            c_nonce_128
+            s_nonce_128
+            c_new_nonce_256
         """
         # ВЫчисляем новый nonce клиента (256 бит)
         client_new_nonce = self.ui.line_edit_256bits.text()
@@ -250,12 +250,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.Critical, QtWidgets.QMessageBox.Ok)
             return None
 
-        self.client_data.nonce256 = client_new_nonce
+        self.client_data.nonce_256 = client_new_nonce
 
         data = self.client_data.pq + "\n" + self.client_data.p.digits() + "\n" + self.client_data.q.digits()
-        data += "\n" + self.client_data.nonce128
+        data += "\n" + self.client_data.nonce_128
         data += "\n" + self.server_data.server_nonce
-        data += "\n" + self.client_data.nonce256
+        data += "\n" + self.client_data.nonce_256
 
         print(f"DH req data to encrypt = {data}")
 
@@ -303,9 +303,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def chek_set_DH_answer(self, answ_hash):
 
-        ans_1_hash = util.hex2ba(sha_one_process(self.client_data.nonce256 + "00000001" + util.hex2ba(self.client_data.auth_key_hash).to01()[96:])).to01()
+        ans_1_hash = util.hex2ba(sha_one_process(self.client_data.nonce_256 + "00000001" + util.hex2ba(self.client_data.auth_key_hash).to01()[96:])).to01()
 
-        ans_2_hash = util.hex2ba(sha_one_process(self.client_data.nonce256 + "00000011" + util.hex2ba(self.client_data.auth_key_hash).to01()[96:])).to01()
+        ans_2_hash = util.hex2ba(sha_one_process(self.client_data.nonce_256 + "00000011" + util.hex2ba(self.client_data.auth_key_hash).to01()[96:])).to01()
 
         if ans_1_hash == answ_hash:
             return True
@@ -451,7 +451,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Сохраняем nonce клиента
 
-        self.client_data.nonce128 = client_nonce
+        self.client_data.nonce_128 = client_nonce
         
 
         try:
@@ -523,7 +523,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         request = chat.req_DH_params()
 
-        request.nonce = self.client_data.nonce128
+        request.nonce = self.client_data.nonce_128
         request.server_nonce = self.server_data.server_nonce
         request.p = str(self.client_data.p)
         request.q = str(self.client_data.q)
@@ -540,7 +540,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Обрабатываем полученный ответ
 
-        if response.nonce == self.client_data.nonce128 and response.server_nonce == self.server_data.server_nonce:
+        if response.nonce == self.client_data.nonce_128 and response.server_nonce == self.server_data.server_nonce:
             print("Ответ на запрос DH получен")
             self.log_event("Ответ на запрос DH получен")
         else:
@@ -548,7 +548,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.log_event("Ответ на запрос DH не верифицирован. Неверные nonce от сервера")
 
         # Формируем ключи для расшифровки запроса
-        tmp_gost_key, tmp_gost_iv = self.kdf(self.server_data.server_nonce, self.client_data.nonce256)        
+        tmp_gost_key, tmp_gost_iv = self.kdf(self.server_data.server_nonce, self.client_data.nonce_256)        
 
         data_to_decrypt = gost.from_hex(response.encrypted_data)
 
@@ -612,11 +612,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # Формируем запрос
         request = chat.set_DH_params()
 
-        request.nonce = self.client_data.nonce128
+        request.nonce = self.client_data.nonce_128
         request.server_nonce = self.server_data.server_nonce
 
         # Формируем данные для шифрования
-        data_request = self.client_data.nonce128
+        data_request = self.client_data.nonce_128
         data_request += "\n" + self.server_data.server_nonce
         data_request += "\n" + "0" #retry_id
         data_request += "\n" + str(self.client_data.dh_pub_key)
@@ -625,7 +625,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         data_with_hash = sha_one_process(data_request) + "\n" + data_request
 
-        tmp_gost_key, tmp_gost_iv = self.kdf(self.server_data.server_nonce, self.client_data.nonce256)
+        tmp_gost_key, tmp_gost_iv = self.kdf(self.server_data.server_nonce, self.client_data.nonce_256)
 
         data_to_encrypt = data_with_hash + "\n" + tmp_gost_key + "\n" + tmp_gost_iv
 
@@ -657,7 +657,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Проверка сессии
 
-        if response.nonce == self.client_data.nonce128 and response.server_nonce == self.server_data.server_nonce:
+        if response.nonce == self.client_data.nonce_128 and response.server_nonce == self.server_data.server_nonce:
             print("Ответ на запрос по установке ключа DH получен")
             self.log_event("Ответ на запрос по установке ключа DH получен")
         else:
@@ -693,8 +693,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Заполняем ui поля данными клиента
         """
-        self.ui.line_edit_128bits.setText(self.client_data.nonce128)
-        self.ui.line_edit_256bits.setText(self.client_data.nonce256)
+        self.ui.line_edit_128bits.setText(self.client_data.nonce_128)
+        self.ui.line_edit_256bits.setText(self.client_data.nonce_256)
         self.ui.line_edit_dh_g.setText(self.client_data.dh_g)
         self.ui.line_edit_dh_p.setText(self.client_data.dh_p)
         self.ui.line_edit_dh_priv_key.setText(self.client_data.dh_priv_key)
@@ -706,8 +706,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self.client_data.auth_key = str(session["crypto"]["auth_key"])
         self.client_data.auth_key_hash = str(session["crypto"]["auth_key_hash"])
-        self.client_data.nonce128 = str(session["crypto"]["nonce_128"])
-        self.client_data.nonce256 = str(session["crypto"]["nonce_256"])
+        self.client_data.nonce_128 = str(session["crypto"]["nonce_128"])
+        self.client_data.nonce_256 = str(session["crypto"]["nonce_256"])
         
         self.client_data.dh_p = hex(session["crypto"]["dh"]["p"])
         self.client_data.dh_g = hex(session["crypto"]["dh"]["g"])
@@ -734,8 +734,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fill_user_ui_crypto_fields()
 
     def save_session_to_file(self):
-        with open("user_config.txt", "w") as conf:
+        with open("./sessions/user_config.txt", "w") as conf:
                 pprint(self.client_data.__dict__, conf)
+
+        with open(self.client_data.username+"_session.yml", "w") as conf:
+            try:
+                yaml.dump(self.client_data.__dict__, conf)
+            except Exception as e:
+                print(e)
+                message_box("Сессия клиента не сохранена!", "Error!",
+                        QtWidgets.QMessageBox.Critical,
+                        QtWidgets.QMessageBox.Ok)
+                return None
+
 
     def read_session_from_file(self):
 
@@ -744,10 +755,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if not file_name[0]:
             return None
         try:
-            with open(file_name[0], "r") as file:
-                # config = yaml.load(file, Loader=SafeLoader).get("ping_script", {})
-                session = yaml.safe_load(file)
-                print(session)
+            # with open(file_name[0], "r") as file:
+            #     # config = yaml.load(file, Loader=SafeLoader).get("ping_script", {})
+            #     session = yaml.safe_load(file)
+            #     print(session)
+            # Читаем конфиг
+            session = ClientContext().read_config(file_name[0])
 
         except FileNotFoundError:
             message_box("Файл не существует!", "Error!",

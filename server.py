@@ -149,6 +149,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = ui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.server = None
+        self.server_thread = None
+        self.server_is_running = False
         # server_data = ServerData()
         isKeysLoaded = server_data.load_keys_from_file("./server_keys.txt")
         
@@ -161,8 +163,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_init() #Инициализируем кнопки
 
         # self.server = self.make_server()
-        threading.Thread(target=self.make_server, daemon=True).start()
-
+        self.server_thread = threading.Thread(target=self.make_server, daemon=True)#.start()
+        self.server_thread.start()
     
     # тут описываем действия окна сервера
 
@@ -182,7 +184,17 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
 
     def stop_recv(self):
-        pass
+        self.server_is_running = False
+        # self.server.stop(0)
+        # self.server.wait_for_termination()
+        if self.server_thread.is_alive():
+            self.log_event("server stoped, but thread is alive")
+            
+            # raise SystemExit()
+            # self.server_thread.join()
+        else:
+            self.log_event("server stoped, thread killed")
+        self.log_event("server stoped")
     
     def make_server(self):
         port = 8080  # a random port for the server to run on
@@ -194,14 +206,21 @@ class MainWindow(QtWidgets.QMainWindow):
         print('Starting server. Listening...')
         self.server.add_insecure_port('[::]:' + str(port))
         self.server.start()
+
+        # Устанавливаем, состояние сервера, что он запущен
+        self.server_is_running = True
         # Server starts in background (in another thread) so keep waiting
         # if we don't wait here the main thread will end, which will end all the child threads, and thus the threads
         # from the server won't continue to work and stop the server
         try:
-            while True:
-                time.sleep(64 * 64 * 100)
-        except (KeyboardInterrupt, SystemExit):
+            while self.server_is_running:
+                time.sleep(5)
+            else: # В случае если мы останавливаем сервер
+                self.server.stop(0)
+                self.server_is_running = False
+        except (KeyboardInterrupt, SystemExit): # В случае если случается ошибка
             self.server.stop(0)
+            self.server_is_running = False
 
     def log_event(self, text):
         self.ui.log_box.append(text)
@@ -253,7 +272,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
         """
         # Устанавливаем данные для проверки сессии
-        response.nonce = curr_client.nonce
+        response.nonce = curr_client.nonce_128
         response.server_nonce = curr_client.server_nonce
 
         # Расчитываем параметры DH 
@@ -274,13 +293,13 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
         server_data.last_msg_time = server_time
 
-        data_answer = (curr_client.nonce +"\n"+curr_client.server_nonce + "\n"
+        data_answer = (curr_client.nonce_128 +"\n"+curr_client.server_nonce + "\n"
                         + curr_client.dh_g + "\n" + curr_client.dh_p + "\n" 
                         + str(curr_client.dh_server_pub_key) + "\n" + str(server_time))
 
         data_answer_with_hash = sha_one_process(data_answer) + "\n" + data_answer
 
-        tmp_gost_key, tmp_gost_iv = self.kdf(curr_client.server_nonce, curr_client.nonce_new)
+        tmp_gost_key, tmp_gost_iv = self.kdf(curr_client.server_nonce, curr_client.nonce_256)
 
         print(f"key = {tmp_gost_key}\niv = {tmp_gost_iv}")
         print(f"key_len = {len(tmp_gost_key)}\niv_len = {len(tmp_gost_iv)}")
@@ -303,7 +322,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
         # Формируем ответ в котором отправляем параметры для DH
         response = chat.res_DH_params()
-        response.nonce = curr_client.nonce
+        response.nonce = curr_client.nonce_128
         response.server_nonce = curr_client.server_nonce
         response.encrypted_data = gost.to_hex(encrypted_data)
 
@@ -315,9 +334,9 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         """
 
         response = chat.dh_gen_ans()
-        response.nonce = client.nonce
+        response.nonce = client.nonce_128
         response.server_nonce = client.server_nonce
-        response.new_nonce_hash_type = util.hex2ba(sha_one_process(client.nonce_new + "00000011" + util.hex2ba(client.auth_key_hash).to01()[96:])).to01()
+        response.new_nonce_hash_type = util.hex2ba(sha_one_process(client.nonce_256 + "00000011" + util.hex2ba(client.auth_key_hash).to01()[96:])).to01()
 
         return response
 
@@ -327,9 +346,9 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         """
 
         response = chat.dh_gen_ans()
-        response.nonce = client.nonce
+        response.nonce = client.nonce_128
         response.server_nonce = client.server_nonce
-        response.new_nonce_hash_type = util.hex2ba(sha_one_process(client.nonce_new + "00000001" + util.hex2ba(client.auth_key_hash).to01()[96:])).to01()
+        response.new_nonce_hash_type = util.hex2ba(sha_one_process(client.nonce_256 + "00000001" + util.hex2ba(client.auth_key_hash).to01()[96:])).to01()
 
         print("Auth_key между клиентом и сервером установлен!")
 
@@ -406,16 +425,16 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         """
         new_client = ClientContext()
 
-        new_client.nonce = request.nonce
+        new_client.nonce_128 = request.nonce
 
-        print(new_client.nonce)
-        print(type(new_client.nonce))
+        print(new_client.nonce_128)
+        print(type(new_client.nonce_128))
 
         # Формируем ответ сервера
         server_response = chat.res_pq()
 
         # Устанавливаем nonce клиента
-        new_client.nonce = request.nonce
+        new_client.nonce_128 = request.nonce
         server_response.nonce = request.nonce
 
         # Генерируем nonce сервера
@@ -493,7 +512,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
             current_client_index = None
 
             for client in self.clients:
-                if client.nonce == request.nonce and client.server_nonce == request.server_nonce:
+                if client.nonce_128 == request.nonce and client.server_nonce == request.server_nonce:
                     current_client_index = self.clients.index(client)
                     print(current_client_index)
 
@@ -536,7 +555,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
 
         self.clients[current_client_index].p = decoded_request_values[2]
         self.clients[current_client_index].q = decoded_request_values[3]
-        self.clients[current_client_index].nonce_new = decoded_request_values[6]
+        self.clients[current_client_index].nonce_256 = decoded_request_values[6]
 
         self.clients[current_client_index].__print__()
 
@@ -561,7 +580,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
             current_client_index = None
 
             for client in self.clients:
-                if client.nonce == request.nonce and client.server_nonce == request.server_nonce:
+                if client.nonce_128 == request.nonce and client.server_nonce == request.server_nonce:
                     current_client_index = self.clients.index(client)
                     print(current_client_index)
 
@@ -575,7 +594,7 @@ class ChatServer(rpc.ChatServerServicer):  # inheriting here from the protobuf r
         recv_encrypted_data = request.encrypted_data
 
         # Формируем ключи для расшифровки сообщения 
-        tmp_gost_key, tmp_gost_iv = self.kdf(curr_client.server_nonce, curr_client.nonce_new)
+        tmp_gost_key, tmp_gost_iv = self.kdf(curr_client.server_nonce, curr_client.nonce_256)
 
         data_to_decrypt = gost.from_hex(recv_encrypted_data)
 
